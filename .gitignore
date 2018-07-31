@@ -1,0 +1,15 @@
+# MongoDB
+data/
+
+# Partiqals
+logs/
+analyzer/pdf_extract/*__*/
+analyzer/pdf_extract/*.exe
+
+# Scrapy stuff:
+.scrapy
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
