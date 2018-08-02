@@ -65,7 +65,7 @@ class DigikeySpider(scrapy.Spider):
                                  AppleWebKit/537.36 (KHTML, like Gecko) \
                                  Chrome/66.0.3359.139 Safari/537.36'}
         
-        for cat in db.cursordb.find({'dist': DigikeySpider.name.split('_')[0]}):
+        for cat in db.cursordb.find({'dist': DigikeySpider.name}):
             if not cat['scan_complete']:
                 start_links.append(cat['current_link'])
                 DigikeySpider.total_count += cat['total_count']
@@ -223,7 +223,7 @@ class DigikeySpider(scrapy.Spider):
             next_page = 'https://www.digikey.com' + next_page
             
             db.cursordb.update_one({'ucat': cat+'__'+subcat,
-                                      'dist':DigikeySpider.name.split('_')[0]},
+                                      'dist':DigikeySpider.name},
                                      {'$set': {'current_link': next_page},
                                       '$inc': {'current_count': table_len}})
             if DigikeySpider.batch_count < cfg.BATCH_SIZE:
@@ -231,10 +231,10 @@ class DigikeySpider(scrapy.Spider):
         else:
             start_link = db.cursordb.find_one(
                     {'ucat': cat+'__'+subcat,
-                     'dist':DigikeySpider.name.split('_')[0]}
+                     'dist': DigikeySpider.name}
                 )['start_link']
             db.cursordb.update_one({'ucat': cat+'__'+subcat,
-                                      'dist':DigikeySpider.name.split('_')[0]},
+                                      'dist':DigikeySpider.name},
                                      {'$set': {'current_link': start_link,
                                                'scan_complete': True},
                                       '$inc': {'current_count': table_len}})

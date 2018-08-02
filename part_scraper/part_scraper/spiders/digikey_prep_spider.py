@@ -21,7 +21,7 @@ from utils.progress import print_prog
 
 
 class DigikeyCount(scrapy.Spider):
-    name = "digikey_prep_spider"
+    name = "digikey_prep"
     custom_settings = {
         'LOG_FILE': os.path.join('..', '..', '..', 'logs',
                                  '%s_scrapy.log' % name)
@@ -90,9 +90,9 @@ class DigikeyCount(scrapy.Spider):
 
     def update_counts(self, response):
         ucat = response.meta['item']['cat_name'] + '__' + response.meta['item']['subcat_name']
-        db.cursordb.update_one({'dist': DigikeyCount.name.split('_')[0],
+        db.cursordb.update_one({'dist': DigikeyCount.name,
                                   'ucat': ucat},
-                                 {'$setOnInsert': {'dist': DigikeyCount.name.split('_')[0],
+                                 {'$setOnInsert': {'dist': DigikeyCount.name,
                                                    'ucat': ucat},
                                   '$set': {'start_link': response.url,
                                            'current_link': response.url,
