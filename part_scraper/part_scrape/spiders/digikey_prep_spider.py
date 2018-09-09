@@ -18,7 +18,6 @@ from dist.digikey import xpath_select as xp
 from dist.digikey import init_pages as init
 from utils.misc import replace_illchar
 from utils.progress import print_prog
-from utils.proxies import get_proxies 
 
 class DigikeyCount(scrapy.Spider):
     name = "digikey_prep"
@@ -28,17 +27,8 @@ class DigikeyCount(scrapy.Spider):
     }
     open(os.path.join('..', '..', '..', 'logs','%s_scrapy.log' % name), 'w').close()
     
-    '''
-    my_settings = Settings()
-    my_settings.set(
-            name='LOG_FILE',
-            value=os.path.join('..', '..', '..', 'logs', 'scrapy_%s.log' % name),
-            priority='cmdline'
-        )
-    '''
     print('Initializing...', end='\r')
     
-    get_proxies()
     subcats_count = 0
     total_subcats = 0
     start_urls = init.start_urls
@@ -46,13 +36,11 @@ class DigikeyCount(scrapy.Spider):
     
     def parse(self, response):
         headers = ['import os', 'import sys',
-                   "sys.path.append(os.path.join('..', '..', '..', '..'))",
                    'from collections import defaultdict',
                    'import mycat_tree as mt',
-                   'class PartTree():',
+                   '\n\nclass PartTree():',
                    '    cat_tree = defaultdict(dict)']
-        with open(os.path.join(self.base_path,
-                  'part_tree_%s.py' % time.strftime('%m%d%Y')), 'w') as f:
+        with open(os.path.join(self.base_path, 'part_tree_latest.py'), 'wt') as f:
             for header in headers:
                 f.write(header+'\n')
         headers = ["myrootcat = ''\n", "mycat = ''\n",
@@ -65,8 +53,7 @@ class DigikeyCount(scrapy.Spider):
         print_prog('Progress', DigikeyCount.subcats_count,
                    DigikeyCount.total_subcats, left_just=15, endwith='\r')
 
-        with open(os.path.join(self.base_path,
-                  'part_tree_%s.py' % time.strftime('%m%d%Y')), 'a') as f:
+        with open(os.path.join(self.base_path, 'part_tree_latest.py'), 'at') as f:
             for cat in init.cats:
                 cat = '/'+cat+'/'
                 cat_name = replace_illchar(response.xpath(xp.PREP_CATNAME % cat).extract_first())
@@ -91,16 +78,14 @@ class DigikeyCount(scrapy.Spider):
 
     def update_counts(self, response):
         ucat = response.meta['item']['cat_name'] + '__' + response.meta['item']['subcat_name']
-        db.cursordb.update_one({'dist': DigikeyCount.name,
-                                  'ucat': ucat},
-                                 {'$setOnInsert': {'dist': DigikeyCount.name,
-                                                   'ucat': ucat},
-                                  '$set': {'start_link': response.url,
-                                           'current_link': response.url,
-                                           'current_count': 0,
-                                           'total_count': int(response.xpath(xp.CAT_COUNT).extract_first().replace(',', '')),
-                                           'scan_complete': False}},
-                                 upsert=True)
+        db.cursordb.update_one({'dist': DigikeyCount.name,'ucat': ucat},
+                               {'$setOnInsert': {'dist': DigikeyCount.name.split('_')[0],
+                                                 'ucat': ucat},
+                                '$set': {'start_link': response.url,
+                                         'current_link': response.url,
+                                         'current_count': 0,
+                                         'total_count': int(response.xpath(xp.CAT_COUNT).extract_first().replace(',', '')),
+                                         'scan_complete': False}}, upsert=True)
 
         DigikeyCount.subcats_count += 1
         print_prog('Progress', DigikeyCount.subcats_count,

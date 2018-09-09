@@ -9,7 +9,7 @@ import time
 from operator import itemgetter
 import db_setup as db
 
-def print_prog(name, cnt, tot, bar_length=40, char_comp='#', char_incomp='_',
+def print_prog(name, cnt, tot, bar_length=40, char_comp=u'\u2588', char_incomp='_',
                left_just=50, time_sig=False, endwith='\n'):
     def prog_bar(perc, bar_length, char_comp, char_incomp):
         comp = int(round(perc*bar_length))

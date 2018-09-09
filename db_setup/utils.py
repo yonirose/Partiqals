@@ -28,10 +28,10 @@ def reset_pdf_stats(really=False, filt='all'):
     '''
     if really:
         if filt == 'all':
-            db.metadb.update_many({},
+            db.distdb.update_many({},
                                   {'$set': {'processed': 'pending', 'page': 0}})
         else:
-            db.metadb.update_many({'processed': filt},
+            db.distdb.update_many({'processed': filt},
                                   {'$set': {'processed': 'pending', 'page': 0}})
     else:
        print('You really did not mean it, did you?') 
@@ -56,9 +56,6 @@ def generate_indexes():
     
     manufacdb_indexes = [IndexModel([('manufac_ngram3', ASCENDING)])]
     db.manufacdb.create_indexes(manufacdb_indexes)
-    
-    metadb_indexes = [(IndexModel([('upart', ASCENDING)]))]
-    db.manufacdb.create_indexes(metadb_indexes)
     
     invenb_indexes = [IndexModel([('ucat', ASCENDING), ('dist', ASCENDING)])]
     db.invendb.create_indexes(invenb_indexes)

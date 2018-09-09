@@ -11,9 +11,9 @@ import os
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 
-BOT_NAME = 'part_scraper'
+BOT_NAME = 'part_scrape'
 
-SPIDER_MODULES = ['part_scraper.spiders']
+SPIDER_MODULES = ['part_scrape.spiders']
 NEWSPIDER_MODULE = ''
 
 
@@ -33,7 +33,7 @@ LOG_FILE = os.path.join('..', '..', '..', 'logs', 'scrapy_log.log')
 # See also autothrottle settings and docs
 #DOWNLOAD_DELAY = 3
 # The download delay setting will honor only one of:
-CONCURRENT_REQUESTS_PER_DOMAIN = 16
+CONCURRENT_REQUESTS_PER_DOMAIN = 32
 #CONCURRENT_REQUESTS_PER_IP = 16
 
 # Disable cookies (enabled by default)
@@ -74,14 +74,14 @@ CONCURRENT_REQUESTS_PER_DOMAIN = 16
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See http://doc.scrapy.org/en/latest/topics/autothrottle.html
-AUTOTHROTTLE_ENABLED = True
+#AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-AUTOTHROTTLE_START_DELAY = 3
+#AUTOTHROTTLE_START_DELAY = 3
 # The maximum download delay to be set in case of high latencies
-AUTOTHROTTLE_MAX_DELAY = 60
+#AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-AUTOTHROTTLE_TARGET_CONCURRENCY = 16.0
+#AUTOTHROTTLE_TARGET_CONCURRENCY = 16
 # Enable showing throttling stats for every response received:
 #AUTOTHROTTLE_DEBUG = False
 
@@ -99,14 +99,15 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 16.0
 # pip3 install scrapy-fake-useragent
 # pip3 install scrapy_proxies
 
+#HTTPERROR_ALLOWED_CODES = [500, 503, 504, 400, 403, 404, 408, 409]
 # Retry many times since proxies often fail
-RETRY_TIMES = 10
+RETRY_TIMES = 10 
 # Retry on most error codes since proxies fail for different reasons
-RETRY_HTTP_CODES = [500, 503, 504, 400, 403, 404, 408]
+RETRY_HTTP_CODES = [500, 503, 504, 400, 403, 404, 408, 409]
 
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
-    'scrapy_proxies.RandomProxy': 100,
+    'part_scrape.middlewares.RandomProxy': 100,
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 110,
     'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
     'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400,

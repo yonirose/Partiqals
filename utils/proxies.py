@@ -15,7 +15,8 @@ def get_proxies(fname='proxy_list.txt', proxy_type='all'):
     
     null = '' # It is actually used when eval is invoked
     proxy_list = []
-    proxy_source = r'http://www.gatherproxy.com/proxylist/country/?c=United%20States'
+    #proxy_source = r'http://www.gatherproxy.com/proxylist/country/?c=United%20States'
+    proxy_source = r'http://www.gatherproxy.com/proxylist/anonymity/?t=Elite'
     response = requests.get(proxy_source)
     if response.status_code == 200:
         parser = fromstring(response.text)
@@ -27,8 +28,7 @@ def get_proxies(fname='proxy_list.txt', proxy_type='all'):
                 proxy_list.append(proxy)
                 if proxy_type == 'all' or proxy['PROXY_TYPE'] == proxy_type.capitalize():
                     f.write('http://%s:%s\n' % (proxy['PROXY_IP'], proxy['PROXY_PORT']))
-
-        return proxy_list
     else:
         print('Connection error. Response code %s' % response.status_code)
-        
+    
+    return proxy_list 
