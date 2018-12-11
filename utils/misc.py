@@ -8,12 +8,12 @@ Created on Tue Nov 15 09:15:39 2016
 import re
 from ngram import NGram
 
-def replace_illchar(s):
-    ill_chars = ['/', '&', 'amp;', ':']
-    rep_chars = ['-', 'and', '', '-']
+def replace_illchar(s, to_type=str):
+    ill_chars = ['/', ',', '(', ')', ':', '&', '>', '<', '$']
+    rep_chars = ['-', '', '', '', '-', 'and', '', '', '']
     for ill_char, rep_char in zip(ill_chars, rep_chars):
         s = s.replace(ill_char, rep_char)
-    return s
+    return to_type(s.strip())
 
 def cmp_files(file1, file2, diffresults_file):
     with open(file1, 'r') as f1:

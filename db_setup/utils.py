@@ -16,7 +16,7 @@ def reset_scrapy_counts(really=False):
                     {'_id': ObjectId(cat['_id'])},
                     {'$set': {'current_count': 0,
                               'scan_complete': False,
-                              'start_link': cat['start_link']}}
+                              'current_link': cat['start_link']}}
                 )
     else:
         print('You really did not mean it, did you?')

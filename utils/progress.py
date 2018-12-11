@@ -40,7 +40,7 @@ def scrapy_prog():
         print_prog(dist_total['_id'].upper(), dist_total['current_count'],
                    dist_total['total_count'])
     
-        all_cats = list(db.cursordb.find())
+        all_cats = list(db.cursordb.find({'dist': dist_total['_id']}))
         all_cats = sorted(all_cats, key=itemgetter('dist', 'ucat'))
         for cats in all_cats:
             print_prog('%s > %s' % (cats['ucat'].split('__')[0],

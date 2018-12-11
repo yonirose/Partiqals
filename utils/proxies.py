@@ -7,6 +7,8 @@ Created on Tue Nov 15 09:15:39 2016
 
 import requests
 from lxml.html import fromstring
+import logging
+log = logging.getLogger('scrapy.proxies')
 
 def get_proxies(fname='proxy_list.txt', proxy_type='all'):
     '''
@@ -29,6 +31,6 @@ def get_proxies(fname='proxy_list.txt', proxy_type='all'):
                 if proxy_type == 'all' or proxy['PROXY_TYPE'] == proxy_type.capitalize():
                     f.write('http://%s:%s\n' % (proxy['PROXY_IP'], proxy['PROXY_PORT']))
     else:
-        print('Connection error. Response code %s' % response.status_code)
+        log.error('Proxy list connection error. Response code %s' % response.status_code)
     
     return proxy_list 

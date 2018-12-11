@@ -77,7 +77,7 @@ class HTMLTableProcessor():
             with open('%s.html' % self.path, encoding='utf-8') as f:
                 page = f.read()
         except UnicodeDecodeError:
-            # Execption will not be raised with latin-1 even with encoding errors
+            # Execptions will not be raised with latin-1 even with encoding errors
             with open(self.path+'.html', encoding='latin-1') as f:
                 page = f.read()
 
@@ -396,7 +396,7 @@ class PageAnalyzer(HTMLTableProcessor):
             self.db_elems.append({**self.collect_terms, **{'direct': direct}})
             self.collect_terms = {'word': [], 'param': [], 'unit': [],
                                   'cond': [], 'term': []}
-            return self.db_elems[-1] # Return thr last added db_elems
+            return self.db_elems[-1] # Return the last added db_elems
         else:
             return None
                                     

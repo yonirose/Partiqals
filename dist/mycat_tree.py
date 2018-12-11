@@ -26,7 +26,8 @@ mytree = {'Interconnects': {'Cables and wires': ['Coaxial', #0
                                              'Tantalum polymer', #10
                                              'Tantalum', #11
                                              'Thin film', #12
-                                             'Variables and trimmers'], #13
+                                             'Variables and trimmers', #13
+                                             'Aluminum electrolytic'], #14
                               'Crystals, oscillators, and resonators': ['Crystals', #0
                                                                         'Oscillators', #1
                                                                         'Configurable oscillators', #2
@@ -148,7 +149,9 @@ mytree = {'Interconnects': {'Cables and wires': ['Coaxial', #0
                                                      'RFID evaluation and development kits', #27
                                                      'RFID reader modules', #28
                                                      'RFID tags and transponders', #29
-                                                     'RFID/RF access and monitoring']}, #30
+                                                     'RFID/RF access and monitoring', #30
+                                                     'RF detectors', #31
+                                                     'Phase detectors']}, #32
           'Thermals': {'Thermal management': ['AC fans', #0
                                               'DC fans', #1
                                               'Fan accessories', #2

@@ -7,11 +7,10 @@ v2
 """
 
 import os
-import time
 
 import scrapy
-#from scrapy.settings import Settings
-from ..items import catsItem
+from scrapy.loader import ItemLoader 
+from ..items import CatsItem
 
 import db_setup as db
 from dist.digikey import xpath_select as xp
@@ -27,12 +26,12 @@ class DigikeyCount(scrapy.Spider):
     }
     open(os.path.join('..', '..', '..', 'logs','%s_scrapy.log' % name), 'w').close()
     
-    print('Initializing...', end='\r')
-    
     subcats_count = 0
     total_subcats = 0
     start_urls = init.start_urls
     base_path = os.path.join('..', '..', '..', 'dist', 'digikey')
+    
+    print('Initializing...', end='\r')
     
     def parse(self, response):
         headers = ['import os', 'import sys',
@@ -48,28 +47,26 @@ class DigikeyCount(scrapy.Spider):
                   "subcats = ["]
 
         for cat in init.cats:
-            cat = '/'+cat+'/'
             DigikeyCount.total_subcats += len(response.xpath(xp.PREP_SUBCAT % cat).extract())
         print_prog('Progress', DigikeyCount.subcats_count,
                    DigikeyCount.total_subcats, left_just=15, endwith='\r')
 
         with open(os.path.join(self.base_path, 'part_tree_latest.py'), 'at') as f:
             for cat in init.cats:
-                cat = '/'+cat+'/'
                 cat_name = replace_illchar(response.xpath(xp.PREP_CATNAME % cat).extract_first())
                 subcat_links = response.xpath(xp.PREP_SUBCAT_LINK % cat).extract()
                 subcat_names = response.xpath(xp.PREP_SUBCAT_NAMES % cat).extract()
                 
-                for header in headers:
-                    f.write(' '*4+header)
-                
+                item = CatsItem()
                 for subcat_link, subcat_name in zip(subcat_links, subcat_names):
                     f.write(' '*15+"'%s',\n" % replace_illchar(subcat_name))
-                    item = catsItem()
                     item['cat_name'] = cat_name
                     item['subcat_name'] = replace_illchar(subcat_name)
                     yield scrapy.Request(url='https://www.digikey.com'+subcat_link,
                                          callback=self.update_counts, meta={'item': item})
+
+                for header in headers:
+                    f.write(' '*4+header)
                 f.write(']\n')
                 f.write(' '*4+'mysub_idx = ['+' ,'*(len(subcat_names)-1)+']\n')
                 f.write(' '*4+'for idx, subcat in zip(mysub_idx, subcats):\n')

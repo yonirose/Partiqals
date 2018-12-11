@@ -12,8 +12,8 @@ from urllib.parse import urljoin
 import scrapy
 from utils.misc import replace_illchar
 from utils.progress import print_prog
-#from dist.mouser import xpath_select as xp
-#from dist.mouser import part_tree as pt
+#from dist.mouser import self.xpath_select as self.xp
+#from dist.mouser import part_tree as self.pt
 import analyzer.line_parser as lp
 import analyzer.analyze_html as ah
 from ..items import PartsItem
@@ -23,17 +23,23 @@ from utils.error_logging import ErrorHandler
 from utils.misc import get_ngrams
 
 
-class PrepBase:
+class PrepBaseMixin:
     
-    raise NotImplementedError
+    pass
 
 
-class MainBase:
+class MainBaseMixin:
     
-    def __init__(self, bread_crumb_idx=-2, start_row_idx):
+    prog_count = 0
+    total_count = 0
+    batch_count = 0  
+    
+    def __init__(self, start_row_idx, xpath_select, part_tree):
         super().__init__()
-        self.bread_crumb_idx = bread_crumb_idx
+        self.xp = xpath_select
+        self.pt = part_tree
         self.start_row_idx = start_row_idx
+        
         self.docs = ah.MongoDocCreator()
         self.text_to = lp.Parser()
         self.err_to = ErrorHandler()
@@ -49,29 +55,42 @@ class MainBase:
                 start_links.append(cat['current_link'])
                 self.__class__.total_count += cat['total_count']
                 self.__class__.prog_count += cat['current_count']
+        if self.total_count == 0:
+            print('Run prep-spider to obtain initial data')
+            os.rename(os.path.join('.', '.start_spider'),
+                      os.path.join('.', '.stop_spider'))
+            raise scrapy.exceptions.CloseSpider('No initial data')
         
         print_prog(self.name+' total progress', self.__class__.prog_count,
                    self.__class__.total_count, left_just=20, endwith='')
-        print_prog(' '*5+'Progress',  self.__class__.batch_count, cfg.BATCH_SIZE,
+        print_prog(' '*5+'Progress', self.__class__.batch_count, cfg.BATCH_SIZE,
                    left_just=5, bar_length=20, endwith='\r')
-        start_links = shuffle(start_links)
+        shuffle(start_links)
         for start_link in start_links:
             yield scrapy.Request(start_link, headers=headers)
+            
+    def bread_crumbs(self, response):
+        raise NotImplementedError
+        
+    def clean_pdf_link(self, pdf_link):
+        raise NotImplementedError
+        
+    def process_misc_data(self, text, part_num, misc_data):
+        raise NotImplementedError
 
     def parse(self, response):
         if os.path.isdir('.stop_spider'):
             print(f'\nStop crawling spider {self.name}')
             raise scrapy.exceptions.CloseSpider('Stopped by user')
-            
-        bread_crumbs = response.xpath(xp.BREAD_CRUMBS).extract()
-        cat, subcat = bread_crumbs[self.bread_crumb_idx:]
-        cat, subcat = replace_illchar(cat), replace_illchar(subcat)
-        table_len = len(response.xpath(xp.TABLE_LEN))
+        
+        cat, subcat = self.bread_crumbs(response)
+        
+        table_len = len(response.xpath(self.xp.TABLE_LEN))
         
         table_heads = {}
-        idx = xp.HEAD_START_IDX
+        idx = self.xp.HEAD_START_IDX
         while True:
-            head = response.xpath(xp.HEAD_TITLE % idx).extract()
+            head = response.xpath(self.xp.HEAD_TITLE % idx).extract()
             if head:
                 table_heads[idx] = head[0].strip()
                 idx += 1
@@ -80,22 +99,23 @@ class MainBase:
         try:
             for idx in range(self.start_row_idx, table_len+1):
                 part = {
-                        'part_num': replace_illchar(response.xpath(xp.PART_NUM % idx).extract_first().strip()),
-                        'dist_num': response.xpath(xp.DIST_NUM % idx).extract_first().strip(),
-                        'manufac': replace_illchar(response.xpath(xp.MANUFAC % idx).extract_first()),
-                        'descr': response.xpath(xp.DESCR % idx).extract_first().strip(),
-                        'unit_price': replace_illchar(response.xpath(xp.UNIT_PRICE % idx).extract_first().strip()),
+                        'part_num': replace_illchar(response.xpath(self.xp.PART_NUM % idx).extract_first().strip()),
+                        'dist_num': response.xpath(self.xp.DIST_NUM % idx).extract_first().strip(),
+                        'manufac': replace_illchar(response.xpath(self.xp.MANUFAC % idx).extract_first()),
+                        'descr': response.xpath(self.xp.DESCR % idx).extract_first().strip(),
+                        'unit_price': replace_illchar(response.xpath(self.xp.UNIT_PRICE % idx).extract_first().strip()),
                         'dist': self.name,
-                        'dist_partlink': urljoin(self.base_url, response.xpath(xp.DIST_LINK % idx).extract_first()),
-                        'pdf_link': response.xpath(xp.PDF_LINK % idx).extract_first(),
-                        'min_quan': response.xpath(xp.MIN_QUAN % idx).extract_first().strip().replace(',', ''),
+                        'dist_partlink': urljoin(self.base_url, response.xpath(self.xp.DIST_LINK % idx).extract_first()),
+                        'pdf_link': response.xpath(self.xp.PDF_LINK % idx).extract_first(),
+                        'min_quan': response.xpath(self.xp.MIN_QUAN % idx).extract_first().strip().replace(',', ''),
                         'date_scraped': datetime.datetime.utcnow()
                     }
                 for title_idx, table_title in table_heads.items():
-                    misc_data = response.xpath(xp.MISC_DATA % (idx, title_idx)).extract_first().strip()
+                    misc_data = response.xpath(self.xp.MISC_DATA % (idx, title_idx)).extract_first().strip()
                     if misc_data:
-                        text = f'{table_title} {misc_data}'
-                        docs = [list(self.docs.make_mongoelem(ext_elems_to_analyze=[text]))[0]]
+                        docs = self.process_misc_data(f'{table_title} {misc_data}',
+                                                      part['part_num'],
+                                                      misc_data)
                         
                         for sub_idx, doc in enumerate(docs):
                             col = '%s.%s' % (title_idx, sub_idx)
@@ -115,16 +135,15 @@ class MainBase:
                     except ValueError:
                         if not part[_[0]]:
                            part[_[0]] = 'See distributer'
-            
-                if not part['pdf_link']:
-                    part['pdf_link'] = ''
-        
+                
+                part['pdf_link'] = self.clean_pdf_link(part['pdf_link'])
+                
                 part['partnum_manufac_ngram3'] = get_ngrams(part['part_num']) \
                                                  + get_ngrams(part['manufac'])
                 
-                part['root_cat'] = pt.cat_tree[cat][subcat]['myrootcat']
-                part['cat'] = pt.cat_tree[cat][subcat]['mycat']
-                part['subcat'] = pt.cat_tree[cat][subcat]['mysubcat']
+                part['root_cat'] = self.pt.cat_tree[cat][subcat]['myrootcat']
+                part['cat'] = self.pt.cat_tree[cat][subcat]['mycat']
+                part['subcat'] = self.pt.cat_tree[cat][subcat]['mysubcat']
                 
                 db.invendb.update_one(
                         {'root_cat': part['root_cat'],
@@ -156,15 +175,15 @@ class MainBase:
                          upsert=True
                     )
                 
-                processed_pdf = db.distdb.find_one({'part_num': part['part_num'],
-                                                    'manufac': part['manufac'],
-                                                    'processed': {'$exists': True}})
-                
+                processed_pdf = db.metadb.find_one({'part_num': part['part_num'],
+                                                    'manufac': part['manufac']})
                 if part['pdf_link'] and (not processed_pdf
                                          or processed_pdf['processed'] == 'error'):
-                    db.distdb.update_one({'part_num': part['part_num'],
+                    db.metadb.update_one({'part_num': part['part_num'],
                                           'manufac': part['manufac']},
-                                         {'$set': {'processed': 'pending', 'page': 0}})
+                                         {'$set': {'processed': 'pending', 'page': 0,
+                                                  'pdf_link': part['pdf_link']}},
+                                         upsert=True)
     
                     if cfg.KEEP_GRIDFS_PDF:
                         item = PartsItem()
@@ -184,36 +203,34 @@ class MainBase:
                            self.total_count, left_just=20, endwith='')
                 print_prog(' '*5+'Progress', self.batch_count, cfg.BATCH_SIZE,
                            left_just=5, bar_length=20, endwith='\r')
-            next_page = response.xpath(xp.NEXT_PAGE).extract_first()
-            dup_req = False
-        except AttributeError:
-            next_page = response.url
-            self.logger.debug(f'---> Got invalid data from {response.url}, trying again with {next_page}')
-            dup_req = True
                 
-        if next_page:
-            next_page = urljoin(self.base_url, next_page)
-            if dup_req: # Don't update count, only link
-                db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},
-                                       {'$set': {'current_link': next_page}})
-            else:
+            next_page = response.xpath(self.xp.NEXT_PAGE).extract_first()
+            if next_page:
+                next_page = urljoin(self.base_url, next_page)
                 db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},
                                        {'$set': {'current_link': next_page},
                                         '$inc': {'current_count': table_len}})
-                                             
+                if self.batch_count < cfg.BATCH_SIZE:
+                    yield scrapy.Request(url=next_page, callback=self.parse)
+            else:
+                start_link = db.cursordb.find_one(
+                        {'ucat': cat+'__'+subcat,
+                         'dist': self.name}
+                    )['start_link']
+                db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},
+                                       {'$set': {'current_link': start_link,
+                                                 'scan_complete': True},
+                                        '$inc': {'current_count': table_len}})
+        except AttributeError:
+            next_page = response.url
+            self.logger.debug(f'---> Got invalid data from {response.url}, trying again with {next_page}')
+            next_page = urljoin(self.base_url, next_page)
+            db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},
+                                   {'$set': {'current_link': next_page}})
             if self.batch_count < cfg.BATCH_SIZE:
                 yield scrapy.Request(url=next_page, callback=self.parse,
-                                     dont_filter=dup_req)
-        else:
-            start_link = db.cursordb.find_one(
-                    {'ucat': cat+'__'+subcat,
-                     'dist': self.name}
-                )['start_link']
-            db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},
-                                   {'$set': {'current_link': start_link,
-                                             'scan_complete': True},
-                                    '$inc': {'current_count': table_len}})
-            
+                                     dont_filter=True)
+        
     def save_pdf(self, response):
         # Save PDF
         upart = f"{response.meta['item']['part_num']}__{response.meta['item']['manufac']}"

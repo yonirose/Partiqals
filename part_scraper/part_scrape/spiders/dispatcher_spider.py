@@ -10,24 +10,23 @@ import shutil
 import time
 from subprocess import Popen
 
-sys.path.append(r'..\..\..')
+from utils.error_logging import ErrorHandler
 import config as cfg
-#from utils.proxies import get_proxies
-from utils.progress import print_prog
+from utils.progress import print_prog, scrapy_prog
 
 
 class DispatcherHandler():
     def __init__(self):
-        pass
+        self.parser = ErrorHandler()
         
     def dispatch_loop(self):
         while True:
             if os.path.isdir('.stop_spider'):
-                print('\nStopping crawling spider...')
+                print('\nAll spiders stopped\n')
                 break
             else:
                 print('\n', time.strftime('%m/%d/%Y'), time.strftime('%H:%M:%S'),
-                      ' Disk space ', end='')
+                      ' Disk space [Gb]', end='')
                 total, used, free = shutil.disk_usage('.')
                 total = int(total/1024/1024/1024)
                 used = int(used/1024/1024/1024)
@@ -35,10 +34,11 @@ class DispatcherHandler():
                 print_prog(' '*5 + 'used', used, total, left_just=5,
                            bar_length=20, endwith='')
                 print_prog(' free', free, total, left_just=5, bar_length=20)
-
+                print('\n')
                 procs = [Popen(('scrapy crawl %s' % spider_to_run).split())
                          for spider_to_run in cfg.SPIDER_LIST]
                 results = [proc.wait() for proc in procs]
+                self.parse_logs()
 
     def start_spider(self):
         os.rename(os.path.join('.', '.stop_spider'),
@@ -53,18 +53,30 @@ class DispatcherHandler():
         for spider_to_prep in cfg.SPIDER_LIST:
             result = Popen(('scrapy crawl %s_prep' % spider_to_prep).split())
             result.wait()
-
+            
+    def parse_logs(self):
+        self.parser.parse_errlog(os.path.join('..', '..', '..', 'logs'))
+        
     def run_all(self):
         self.prep_spider()
         self.start_spider()
+        
+    def print_stats(self):
+        scrapy_prog()
 
     def help(self):
-        print('Dispatches scrapy spiders\n')
-        print('--start = Start dispatch process')
-        print('--stop = Stop dispatch process')
-        print('--prep = Prepare information for crawling'),
-        print('--prep-start = Prepare and start a spider')
-        print('--help = help menu')
+        help_opts = [
+                'Dispatches scrapy spiders and invoking misc. utils\n',
+                '--start = Start dispatch process',
+                '--stop = Stop dispatch process',
+                '--prep = Prepare information for crawling',
+                '--prep-start = Prepare and start a spider',
+                '--parse-logs = Parse scrapy logs into three levels',
+                '--stats = Print progress of all spiders',
+                '--help = help menu'
+            ]
+        for opt in help_opts:
+            print(opt)
 
     
 if __name__ == '__main__':
@@ -73,6 +85,8 @@ if __name__ == '__main__':
           '--stop': disp.stop_spider,
           '--prep': disp.prep_spider,
           '--prep-start': disp.run_all,
+          '--parse-logs': disp.parse_logs,
+          '--stats': disp.print_stats,
           '--help': disp.help}
     try:
         op[sys.argv[1]]()

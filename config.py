@@ -55,14 +55,14 @@ KEEP_PDF_IN_DB = False
 NUM_PROC = 2
 
 # PDF agent spider
-PDF_AGENT_URL = 'https://www.datasheetpro.com/search/'
+PDF_AGENT_URL = 'https://www.designfast.com/'
 # SINGLE_PDF_XPATH = "/html/body/div[3]/div/div[1]/article[1]/div/div[2]/a/@href"
 # MANY_PDF_XPATH = "/html/body/div[3]/div/div[1]/article[1]/div[1]/div[2]/a/@href"
 # AGENT_PDF_XPATH = "/html/body/div[3]/div/div[1]/article[1]/div[1]/div[2]/a/@href"
 AGENT_PDF_XPATH = '/html/body/div[3]/div/div[1]/article/div[1]/div[2]/a/@href'
 
 # Spiders
-PERC_TO_SCAN = 0.0005 # Used in main spider. Values are between 0 to 1
-BATCH_SIZE = 173
+PERC_TO_SCAN = 0.01 # Used in main spider. Values are between 0 to 1
+BATCH_SIZE = 1000
 SCRAPY_LOG_NAME = 'scrapy_log.log'
-SPIDER_LIST = ['digikey']
+SPIDER_LIST = ['digikey', 'mouser']

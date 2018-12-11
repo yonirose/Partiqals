@@ -7,16 +7,18 @@ v2
 """
 
 import re
-from collections import namedtuple
+from collections import namedtuple, abc
 
 #from ngram import NGram
 
 from utils.misc import get_ngrams
 
+'''
 if __name__ == '__main__':
     import symb_unit as symb
 else:
-    from analyzer import symb_unit as symb
+'''
+from analyzer import symb_unit as symb
 
 
 class TokenHandler():
@@ -50,8 +52,12 @@ class TokenHandler():
         def cond():
             self.result['cond'][-1] += ' ' + term
         
+        def term_range():
+            self.result['term'][-1] = self.result['term'][-1].strip('-')
+            self.result['term'].append(term)
+        
         func = {'COND': cond, 'SWS': phrase, 'MWS': phrase, 'NUM': num,
-                'UNIT': phrase, 'TERM': phrase, 'OPRND': phrase}
+                'UNIT': phrase, 'TERM': phrase, 'OPRND': phrase, 'RANGE': term_range}
         key = 'SWS' if self.tokens_sws[-2].type == 'SWS' else self.tokens[-2].type
         # key = self.tokens[-2].type
         if self.verbose:
@@ -92,8 +98,7 @@ class TokenHandler():
                     temp_result += (eval(str(param)
                                         + self.tokens[-2].value
                                         + num), )
-                self.result['param'][-1] = temp_result
-                
+                self.result['param'][-1] = temp_result      
             elif self.tokens[-3].type == 'UNIT':
                 raise KeyError # Forces to execute the code in the else block
             elif self.tokens[-3].type == 'TERM':
@@ -112,9 +117,9 @@ class TokenHandler():
                 self.result['param'][-1] = (self.result['param'][-1][0], eval(num))
                 
             def unit():
-                self.result['param'][-1] = (self.result['param'][-1][0],
-                                            eval(num),
-                                            self.result['param'][-1][1])
+                    self.result['param'][-1] = (self.result['param'][-1][0],
+                                                eval(num),
+                                                self.result['param'][-1][1])
                 
             def term():
                 self.result['term'][-1] += ('' if self.result['term'][-1][-1] == '-'
@@ -134,23 +139,6 @@ class TokenHandler():
                 func[key]()
             except IndexError:
                 anything_else()
-            '''
-            if self.tokens[-3].type == 'NUM':
-               self.result['param'][-1] = (self.result['param'][-1][0],
-                                          eval(num))
-            elif self.tokens[-3].type == 'UNIT':
-               self.result['param'][-1] = (self.result['param'][-1][0],
-                                          eval(num),
-                                          self.result['param'][-1][1])
-            elif self.tokens[-3].type == 'TERM':
-                # self.result['param'].append((eval(num),))
-                self.result['term'][-1] += ('' if self.result['term'][-1][-1] == '-'
-                                            else '-') + num
-                self.change_token('TERM', num)
-            else:
-                self.result['term'][-1] += ' ' + self.tokens[-2].value + num
-                self.change_token('TERM', num)
-            '''
             
         def number():
             if num[0] == '+' and self.tokens_sws[-2].type == 'NUM':
@@ -184,7 +172,7 @@ class TokenHandler():
             # The equality to 4 is to account for situation like 1Ohm to 1MOhm
             if not len(self.result['param'][-1]) == 4:
                 self.result['param'][-1] = self.result['param'][-1] + (prefix+unit,)
-        
+                
         def cond_num():
             self.result['cond'][-1] += ' ' + unit
             
@@ -496,7 +484,11 @@ class Parser(TokenHandler):
                 (re.compile(r'([\d ])(x|×)([\d ])'), r'\1*\3'),  # Convetr axb to a*b
                 (re.compile(r'(\*10)([\–\-+]\d)'), r'e\2'),      # Convert a*10-b to ae-b
                 (re.compile(r'([\d\w])(-|~|±|\+/-|-/\+)(\d)'), r'\1 \2 \3'), # Convert a-b to a - b
-                (re.compile(r'(m|M)(eg|EG)(ohm|Ohm|OHM)'), 'MΩ')
+                (re.compile(r'(m|M)(eg|EG)(ohm|Ohm|OHM)'), 'MΩ'),
+                (re.compile(r'( DC | dc | Dc )'), ' 0 '),
+                (re.compile(r'([a-z] *)(- )(\d)'), r'\1-\3'),
+                (re.compile(r'( {2,})(- )(\d)'), r'\1-\3'),
+                (re.compile(r'(\+ )(\d)'), r'\2')
             ]
         
         self.token_func = {'TERM': self.term, 'NUM': self.num,
@@ -519,7 +511,7 @@ class Parser(TokenHandler):
         self.tokens_sws = []
     
     def preprocess(self, text):
-        text = '  ' + text + '  '
+        text = f'  {text}  '
         for pat, sub in self.custom_subs:
             text = re.sub(pat, sub, text)
         
@@ -536,7 +528,20 @@ class Parser(TokenHandler):
         if self.verbose:
             print('text=|%s|' % text)
         return text
-        
+    
+    @property
+    def conversion_ratio(self):
+        occur_cnt = 0
+        for item_type in ['cond', 'param', 'unit', 'term']:
+            if isinstance(self.result[item_type], abc.Sequence):
+                for instances in self.result[item_type]:
+                    for instance in instances:
+                        if str(instance) in self.text:
+                            occur_cnt += 1
+            elif str(self.result[item_type]) in self.text:
+                occur_cnt += 1
+        return occur_cnt/len(self.text.strip().split(' '))
+                
     def postprocess(self):
         # Remove unit duplicates
         self.result['unit'] = list(set(self.result['unit']))
@@ -548,13 +553,19 @@ class Parser(TokenHandler):
                 terms.append(term)
         self.result['term'] = terms
         
+    
+        # Conversion sanity check. If less than 0.5 just keep the raw text
+        if self.conversion_ratio < 0.5:
+            self.reset_result()
+            self.result['term'] = [self.raw_text]
+    
         # Generate words
         for term in self.result['term']:
             if len(term) > 3:
                 self.result['word'] += get_ngrams(term)
             else:
                 self.result['word'].append(term)
-                       
+            
     def generate_tokens(self, text):
         pat = self.master_pat
         Token = namedtuple('Token', ['type', 'value'])
@@ -570,6 +581,7 @@ class Parser(TokenHandler):
     
     def parse(self, text):
         self.reset_result()
+        self.raw_text = text
         self.text = self.preprocess(text)
         self.gen = self.generate_tokens(self.text)
         for tok in self.gen:
@@ -579,7 +591,10 @@ class Parser(TokenHandler):
                 self.token_func[tok.type](tok.value)
             except KeyError: # This catches also other func[key] that does not exist and do nothing
                 pass
-        
+            except IndexError:
+                self.reset_result()
+                self.result['term'] = [self.raw_text]
+            
         self.postprocess()
     
     def reset_result(self):
@@ -587,19 +602,6 @@ class Parser(TokenHandler):
                        'word': []}
         self.tokens = []
         self.tokens_sws = []
-    
-    '''
-    @staticmethod    
-    def get_ngrams(term, n=3):
-        term = re.sub(r'[-_.__/\\ ]', '', term.lower())
-        
-        for _ in ['_', '__', '-', '.', '/', '\\', ' ']:
-            term = term.replace(_, '!')
-        clean_term = term.replace('!', '')
-        ngram_words = [_ for _ in term.split('!')]
-        ngram_words += list(NGram(N=n)._split(term))
-        return list(NGram(N=n)._split(term))
-    '''
 
 
 if __name__ == '__main__':

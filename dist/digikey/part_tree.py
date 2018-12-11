@@ -17,7 +17,7 @@ subcats = ['Coaxial Cables (RF)',
            'Wire Wrap']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Cables, Wires'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Cables Wires'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
 myrootcat = 'Passive devices'
 mycat = 'Capacitors'
@@ -26,9 +26,9 @@ mysubcat = mt.mytree[myrootcat][mycat]
 subcats = ['Accessories',
            'Aluminum - Polymer Capacitors',
            'Aluminum Capacitors',
-           'Capacitor Networks, Arrays',
+           'Capacitor Networks Arrays',
            'Ceramic Capacitors',
-           'Electric Double Layer Capacitors (EDLC), Supercapacitors',
+           'Electric Double Layer Capacitors EDLC Supercapacitors',
            'Film Capacitors',
            'Mica and PTFE Capacitors',
            'Niobium Oxide Capacitors',
@@ -36,8 +36,9 @@ subcats = ['Accessories',
            'Tantalum - Polymer Capacitors',
            'Tantalum Capacitors',
            'Thin Film Capacitors',
-           'Trimmers, Variable Capacitors']
-mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+           'Trimmers Variable Capacitors',
+           'Aluminum Electrolytic Capacitors']
+mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 for idx, subcat in zip(mysub_idx, subcats):
     cat_tree['Capacitors'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
@@ -48,7 +49,7 @@ mysubcat = mt.mytree[myrootcat][mycat]
 subcats = ['Accessories',
            'Circuit Breakers',
            'Disconnect Switch Components',
-           'Electrical, Specialty Fuses',
+           'Electrical Specialty Fuses',
            'Fuseholders',
            'Fuses',
            'Gas Discharge Tube Arresters (GDT)',
@@ -80,7 +81,7 @@ subcats = ['Crystals',
            'VCOs (Voltage Controlled Oscillators)']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Crystals, Oscillators, Resonators'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Crystals Oscillators Resonators'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
 myrootcat = 'Active devices'
 mycat = 'Discrete'
@@ -134,7 +135,7 @@ subcats = ['AC Fans',
            'Thermal - Thermoelectric, Peltier Modules']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Fans, Thermal Management'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Fans Thermal Management'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
 myrootcat = 'Passive devices'
 mycat = 'Filters'
@@ -163,13 +164,13 @@ mycat = 'Inductors and coils'
 mysubcat = mt.mytree[myrootcat][mycat]
 
 subcats = ['Adjustable Inductors',
-           'Arrays, Signal Transformers',
+           'Arrays Signal Transformers',
            'Delay Lines',
            'Fixed Inductors',
            'Wireless Charging Coils']
 mysub_idx = [0, 1, 2, 3, 4]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Inductors, Coils, Chokes'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Inductors Coils Chokes'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
 # -----------------------------------------------------------------------------
 myrootcat = 'Integrated circuits (IC)'
@@ -376,12 +377,12 @@ mysubcat = mt.mytree[myrootcat][mycat]
 
 subcats = ['Accessories',
            'Motor Driver Boards, Modules',
-           'Motors - AC, DC',
-           'Solenoids, Actuators',
+           'Motors - AC DC',
+           'Solenoids Actuators',
            'Stepper Motors']
 mysub_idx = [0, 1, 2, 3, 4]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Motors, Solenoids, Driver Boards-Modules'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Motors Solenoids Driver Boards-Modules'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
 myrootcat = 'Passive devices'
 mycat = 'Potentiometers and variable resistors'
@@ -398,7 +399,7 @@ subcats = ['Accessories',
            'Value Display Potentiometers']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Potentiometers, Variable Resistors'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Potentiometers Variable Resistors'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
 myrootcat = 'Power supplies'
 mycat = 'On-Board'
@@ -455,7 +456,7 @@ subcats = ['Accessories',
            'Chassis Mount Resistors',
            'Chip Resistor - Surface Mount',
            'Precision Trimmed Resistors',
-           'Resistor Networks, Arrays',
+           'Resistor Networks Arrays',
            'Specialized Resistors',
            'Through Hole Resistors']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6]
@@ -496,7 +497,7 @@ subcats = ['Attenuators',
            'RFID Evaluation and Development Kits, Boards',
            'RFID Reader Modules',
            'RFID Transponders, Tags',
-           'RFID, RF Access, Monitoring ICs']
+           'RFID RF Access Monitoring ICs']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
              18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
 for idx, subcat in zip(mysub_idx, subcats):
@@ -515,12 +516,12 @@ subcats = ['Accessories',
            'Dust Sensors',
            'Encoders',
            'Flex Sensors',
-           'Float, Level Sensors',
+           'Float Level Sensors',
            'Flow Sensors',
            'Force Sensors',
            'Gas Sensors',
-           'Humidity, Moisture Sensors',
-           'Image Sensors, Camera',
+           'Humidity Moisture Sensors',
+           'Image Sensors Camera',
            'IrDA Transceiver Modules',
            'LVDT Transducers (Linear Variable Differential Transformer)',
            'Multifunction',
@@ -532,7 +533,7 @@ subcats = ['Accessories',
 mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
              18, 19, 20, 21]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Sensors, Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Sensors Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
 mycat = 'Magnetic'
 mysubcat = mt.mytree[myrootcat][mycat]
@@ -545,7 +546,7 @@ subcats = ['Magnetic Sensors - Compass, Magnetic Field (Modules)',
            'Magnets - Sensor Matched']
 mysub_idx = [0, 1, 2, 3, 4, 5]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Sensors, Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Sensors Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
     
 mycat = 'Motion'
 mysubcat = mt.mytree[myrootcat][mycat]
@@ -559,7 +560,7 @@ subcats = ['Motion Sensors - Accelerometers',
            'Motion Sensors - Vibration']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Sensors, Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Sensors Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
     
 mycat = 'Optical'
 mysubcat = mt.mytree[myrootcat][mycat]
@@ -579,7 +580,7 @@ subcats = ['Optical Sensors - Ambient Light, IR, UV Sensors',
            'Optical Sensors - Reflective - Logic Output']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Sensors, Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Sensors Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
     
 mycat = 'Position and proximity'
 mysubcat = mt.mytree[myrootcat][mycat]
@@ -589,7 +590,7 @@ subcats = ['Position Sensors - Angle, Linear Position Measuring',
            'Proximity-Occupancy Sensors - Finished Units']
 mysub_idx = [0, 1, 2]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Sensors, Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Sensors Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
     
 mycat = 'Sensor cables and interfaces'
 mysubcat = mt.mytree[myrootcat][mycat]
@@ -599,7 +600,7 @@ subcats = ['Sensor Cable - Accessories',
            'Sensor Interface - Junction Blocks']
 mysub_idx = [0, 1, 2]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Sensors, Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Sensors Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
     
 mycat = 'Temperature'
 mysubcat = mt.mytree[myrootcat][mycat]
@@ -613,7 +614,7 @@ subcats = ['Temperature Sensors - Analog and Digital Output',
            'Temperature Sensors - Thermostats - Solid State']
 mysub_idx = [0, 1, 2, 3, 4, 5, 6]
 for idx, subcat in zip(mysub_idx, subcats):
-    cat_tree['Sensors, Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+    cat_tree['Sensors Transducers'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 # -----------------------------------------------------------------------------
 
 myrootcat = 'Magnetics'
@@ -623,7 +624,7 @@ mysubcat = mt.mytree[myrootcat][mycat]
 subcats = ['Accessories',
            'Audio Transformers',
            'Current Sense Transformers',
-           'Isolated, Non-Isolated Autotransformer - Step Up, Step Down',
+           'Isolated Non-Isolated Autotransformer - Step Up Step Down',
            'Power Transformers',
            'Pulse Transformers',
            'Specialty Transformers',

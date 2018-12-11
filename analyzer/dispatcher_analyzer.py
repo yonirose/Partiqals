@@ -26,7 +26,6 @@ class DispatcherHandler():
                   
     def dispatch_loop(self):
         self.dispatch_proc()
-        
         while True:
             if os.path.isdir(os.path.join(self.base_dir, 'stop')):
                 print('\nStopping dispatch process...')

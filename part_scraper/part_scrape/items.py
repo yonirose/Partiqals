@@ -7,11 +7,13 @@
 
 import scrapy
 
-class catsItem(scrapy.Item):
+class CatsItem(scrapy.Item):
     cat_name = scrapy.Field()
-    subcat_name = scrapy.Field()
+    subcat_names = scrapy.Field()
+    subcat_links = scrapy.Field()
+
     
-class partsItem(scrapy.Item):
+class PartsItem(scrapy.Item):
     part_num = scrapy.Field()
     manufac = scrapy.Field()
     

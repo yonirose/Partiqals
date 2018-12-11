@@ -7,6 +7,7 @@ v2
 """
 
 import os
+import time
 from urllib.parse import urljoin, urlparse
 from collections import defaultdict
 import pickle
@@ -28,8 +29,16 @@ class DigiekeyCount(scrapy.Spider):
     name = "digikey_prepnew"
     custom_settings = {
         'LOG_FILE': os.path.join('..', '..', '..', 'logs',
-                                 f'{name}_scrapy.log')
+                                 f'{name}_scrapy.log'),
+        'DOWNLOADER_MIDDLEWARES': {
+                'scrapy.downloadermiddlewares.retry.RetryMiddleware': 90,
+                'part_scrape.Middleware.ProxyMiddleware.middlewares_prep.RandomProxy': 100,
+                'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 110,
+                'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
+                'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400
+            }
     }
+        
     open(os.path.join('..', '..', '..', 'logs', f'{name}_scrapy.log'),
                       'w').close()
     
@@ -112,18 +121,18 @@ class DigiekeyCount(scrapy.Spider):
          
            self.__class__.cat_tree[cat_name].add(subcat_name)
            self.update_counts(cat_name,
-                              replace_illchar(response.xpath(xp.PREP_COUNTS).extract_first(),
-                                              to_type=int
-                                      ),
-                              subcat_name,
-                              response.url)
+                              replace_illchar(
+                                      response.xpath(xp.PREP_COUNTS).extract_first(),
+                                      to_type=int), subcat_name, response.url
+                                      )
     
     def closed(self, reason):
         print('\n')
         count, tot_count = self.update_prog(prog_bar=False)
         if count == tot_count:
-            with open(os.path.join(self.base_path, 'part_tree_latest.py'), 'wt') as f:
-                headers = ['import os', 'import sys',
+            with open(os.path.join(self.base_path, 'part_tree_latest.py'), 'at') as f:
+                headers = [f"{time.strftime('%m/%d/%Y')}, {time.strftime('%H:%M:%S')}\n",
+                           'import os', 'import sys',
                            'from collections import defaultdict',
                            'import mycat_tree as mt',
                            'cat_tree = defaultdict(dict)']
@@ -144,6 +153,7 @@ class DigiekeyCount(scrapy.Spider):
                     for header in headers:
                         f.write(header)
                     f.write(f"{' '*4}cat_tree['{cat}'][subcat] = {{'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}}\n\n")
+            db.prepdb.drop()      
         else:
             with open(os.path.join('..', '..', '..', 'dist',
                                    self.__class__.name.split('_')[0],

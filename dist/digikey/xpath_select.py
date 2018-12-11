@@ -4,11 +4,14 @@ Created on Fri Oct  6 13:50:40 2017
 
 @author: jrosenfe
 """
-# Prep crawler
-PREP_SUBCAT = '//li/a[contains(@href, "%s")]/@href'
-PREP_CATNAME = '//a[contains(@href, "%s")]/text()'
-PREP_SUBCAT_LINK = '//li/a[contains(@href, "%s")]/@href'
-PREP_SUBCAT_NAMES = '//li/a[contains(@href, "%s")]/text()'
+# Prep spider
+INIT_SUBCAT_NAMES = '//a[contains(@href, "%s")]/text()'
+INIT_SUBCAT_LINKS = '//a[contains(@href, "%s")]/@href'
+DRILL_SUBCAT_NAMES = '//li/a[contains(@href, "products")]/text()'
+DRILL_SUBCAT_LINKS = '//li/a[contains(@href, "products")]/@href'
+BREAD_CRUMBS1 = '//*[@id="content"]/h1/a[2]/text()'
+BREAD_CRUMBS2 = '//div/h1[contains(@class, "breadcrumbs")]/text()'
+PREP_COUNTS = "//span[@id='matching-records-count']/text()"
 
 # Main crawler
 # Part catagories and sub-catagories
@@ -32,5 +35,3 @@ UNIT_PRICE = '//*[@id="lnkPart"]/tr[%s]/td[9]/text()'
 MIN_QUAN = '//*[@id="lnkPart"]/tr[%s]/td[10]/text()'
 NEXT_PAGE = '//a[contains(@class, "Next")]/@href'
 
-# Prep spider
-CAT_COUNT = '//*[@id="matching-records-count"]/text()'
