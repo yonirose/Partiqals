@@ -56,3 +56,36 @@ mysub_idx = [ , , ,]
 for idx, subcat in zip(mysub_idx, subcats):
     cat_tree['Transistors RF'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
+12/11/2018, 16:33:52
+
+import os
+import sys
+from collections import defaultdict
+import mycat_tree as mt
+cat_tree = defaultdict(dict)
+myrootcat = ''
+mycat = ''
+mysubcat = mt.mytree[myrootcat][mycat]
+
+subcats = [
+    'Phase Detectors-Shifters',
+    'RF System on a Chip - SoC',
+    'RF Microcontrollers - MCU',
+    'Up-Down Converters',
+    'RF Amplifier',
+]
+mysub_idx = [ , , , , ,]
+for idx, subcat in zip(mysub_idx, subcats):
+    cat_tree['Wireless and RF Integrated Circuits'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+
+myrootcat = ''
+mycat = ''
+mysubcat = mt.mytree[myrootcat][mycat]
+
+subcats = [
+    'PIN Diodes',
+]
+mysub_idx = [ ,]
+for idx, subcat in zip(mysub_idx, subcats):
+    cat_tree['Wireless and RF Semiconductors'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+

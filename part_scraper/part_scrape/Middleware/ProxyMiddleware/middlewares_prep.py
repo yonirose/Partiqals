@@ -92,41 +92,11 @@ class RandomProxy(object):
             ))
     
     def process_response(self, request, response, spider):
-        '''
-        if response.status in range(400, 600):
-            #del self.proxies[request.meta['proxy']]
-            if len(self.proxies) == 0:
-                self.read_proxy_list()
-            proxy_address = random.choice(list(self.proxies.keys()))
-
-            log.info('--> Retrying [{}] {} with proxy: {}'.format(
-                    response.status, response.url, proxy_address 
-                ))
-            request.meta['proxy'] = proxy_address
-             
-            if 'captcha' in response.url.lower():
-                log.info('--> Caught CAPTCHA')
-                url = 'https://www.mouser.com/' + response.url.split('Referrer=')[1]
-                return Request(url,
-                               meta={'proxy': proxy_address, 'exception': False},
-                               callback=request.callback,
-                               dont_filter = True)
-            else:
-                request.meta['proxy'] = proxy_address
-                #url = response.url
-                #request.replace(url='https://www.mouser.com/' + response.url.split('Referrer=')[1])
-        '''
-        
         if response.status == 200:
             db.prepdb.delete_one({'path': urlparse(response.url).path})
             db.prepdb.update_one({'dist': spider.name.split('_')[0],
                                   'current_count': {'$exists': 1}},
                                  {'$inc': {'current_count': 1}})
-            
-        if 'captcha' in response.url.lower():
-            log.info('--> Caught CAPTCHA, ignoring request')
-            raise IgnoreRequest('Captcha')
-            
         return response
     
     def process_exception(self, request, exception, spider):

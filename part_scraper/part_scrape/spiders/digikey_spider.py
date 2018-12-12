@@ -35,8 +35,8 @@ class DigikeySpider(MainBaseMixin, scrapy.Spider):
         super().__init__(start_row_idx=1, xpath_select=xp, part_tree=pt)
         
     def bread_crumbs(self, response):
-        cat = response.xpath(self.xp.BREAD_CRUMBS1).extract_first()
-        subcat = response.xpath(self.xp.BREAD_CRUMBS2).extract()[-1].strip('> ')
+        cat = response.xpath(xp.BREAD_CRUMBS1).extract_first()
+        subcat = response.xpath(xp.BREAD_CRUMBS2).extract()[-1].strip('> ')
         return replace_illchar(cat), replace_illchar(subcat)
     
     def clean_pdf_link(self, pdf_link):
