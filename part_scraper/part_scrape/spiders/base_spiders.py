@@ -7,6 +7,7 @@ Created on Sun Dec 2 13:38:39 2018
 import os
 import datetime
 import time
+import re
 from collections import defaultdict
 from random import shuffle
 from urllib.parse import urljoin, urlparse
@@ -38,6 +39,12 @@ class PrepBaseMixin:
     def bread_crumbs(self, response):
         raise NotImplementedError
     
+    def clean_next_url(self, url):
+        raise NotImplementedError
+        
+    def clean_pdf_url(self, url):
+        raise NotImplementedError
+    
     def cat_required(self, link):
         for ignore_cat in self.init.ignore_cats:
             if ignore_cat in link:
@@ -61,7 +68,7 @@ class PrepBaseMixin:
                 
                 for subcat_name, subcat_link in zip(subcat_names, subcat_links):
                     if self.cat_required(subcat_link):
-                        url = urljoin(self.base_url, subcat_link)
+                        url = self.clean_next_url(urljoin(self.base_url, subcat_link))
                         db.prepdb.insert_one({'dist': self.name.split('_')[0],
                                               'link': url,
                                               'path': urlparse(url).path})
@@ -92,14 +99,13 @@ class PrepBaseMixin:
         if subcat_names:
            for subcat_name, subcat_link in zip(subcat_names, subcat_links):
                if self.cat_required(subcat_link):
-                   url = urljoin(self.base_url, subcat_link)
+                   url = self.clean_next_url(urljoin(self.base_url, subcat_link))
                    db.prepdb.insert_one({'dist': self.name.split('_')[0],
                                          'link': url,
                                          'path': urlparse(url).path})
                    db.prepdb.update_one({'dist': self.name.split('_')[0],
                                          'total_count': {'$exists': 1}},
                                         {'$inc': {'total_count': 1}})
-                   
                    self.update_prog()
             
                    yield scrapy.Request(url=url, callback=self.drill_down)
@@ -112,7 +118,7 @@ class PrepBaseMixin:
                            response.xpath(self.xp.PREP_COUNTS).extract_first(),
                            to_type=int),
                    subcat_name,
-                   response.url
+                   self.clean_next_url(response.url)
             )
     
     def closed(self, reason):
@@ -120,7 +126,7 @@ class PrepBaseMixin:
         count, tot_count = self.update_prog(prog_bar=False)
         if count == tot_count:
             with open(os.path.join(self.base_path, 'part_tree_latest.py'), 'at') as f:
-                headers = [f"{time.strftime('%m/%d/%Y')}, {time.strftime('%H:%M:%S')}\n",
+                headers = [f"# {time.strftime('%m/%d/%Y')}, {time.strftime('%H:%M:%S')}\n",
                            'import os', 'import sys',
                            'from collections import defaultdict',
                            'import mycat_tree as mt',
@@ -178,14 +184,86 @@ class MainBaseMixin:
         self.docs = ah.MongoDocCreator()
         self.text_to = lp.Parser()
         self.err_to = ErrorHandler()
-  
+    
+    def validate_data(self, part, url):
+        
+        def report_anam(problem):
+            with open(os.path.join('..', '..', '..', 'logs',
+                                   'data_validation.log'), 'at') as dv_file:
+                msg = (
+                        f"{'~'*80}\n"
+                        f"{time.strftime('%m/%d/%Y')} {time.strftime('%H:%M:%S')} "
+                        f"DIST: {part['dist']}\n"
+                        f"{url}\n"
+                        f"PART NUM: {part['part_num']}, ISSUE: {problem}\n"
+                        
+                )
+                dv_file.write(msg)
+                
+        def waiver(valid_type, data):
+            waiver_cases = {'not_float': ['Digi-Reel']}
+            for waiver_case in waiver_cases[valid_type]:
+                if data == waiver_case:
+                    return True
+            return False
+            
+        def empty_string(data_type, data):
+            if data == '':
+                report_anam(f"{data_type} is empty string ''")
+                return True
+            return False
+          
+        def not_int(data_type, data):
+            if not isinstance(data, int):
+                report_anam(f'{data_type} is not int but <{data}>')
+                return True
+            return False
+                
+        def not_float(data_type, data):
+            if not isinstance(data, float) and not waiver('not_float', data):
+                report_anam(f'{data_type} is not float but <{data}>')
+                return True
+            return False
+                
+        def not_str(data_type, data):
+            if not isinstance(data, str):
+                report_anam(f'{data_type} is not str but <{data}>')
+                return True
+            return False
+                
+        def http_inlink(data_type, data):
+            if 'http' not in data and 'https' not in data:
+                report_anam(f"{data_type} has no 'http(s)' in <{data}>")
+                return True
+            return False
+                
+        validation_types = {'part_num': [empty_string, not_str],
+                            'dist_num': [empty_string, not_str],
+                            'manufac': [empty_string, not_str],
+                            'descr': [empty_string, not_str],
+                            'unit_price': [not_float],
+                            'dist_partlink': [empty_string, http_inlink],
+                            'pdf_link': [empty_string, http_inlink],
+                            'min_quan': [not_int]}
+        
+        for data_type, valid_funcs in validation_types.items():
+            for valid_func in valid_funcs:
+                if valid_func(data_type, part[data_type]):
+                    break
+
     def bread_crumbs(self, response):
         raise NotImplementedError
         
-    def clean_pdf_link(self, pdf_link):
+    def clean_next_url(self, url):
+        raise NotImplementedError
+        
+    def clean_pdf_url(self, url):
         raise NotImplementedError
         
     def process_misc_data(self, text, part_num, misc_data):
+        raise NotImplementedError
+        
+    def check_current_url(self, url):
         raise NotImplementedError
         
     def start_requests(self):
@@ -207,19 +285,65 @@ class MainBaseMixin:
         
         print_prog(self.name+' total progress', self.__class__.prog_count,
                    self.__class__.total_count, left_just=20, endwith='')
-        print_prog(' '*5+'Progress', self.__class__.batch_count, cfg.BATCH_SIZE,
+        print_prog(' '*5+'Progress', self.batch_count, cfg.BATCH_SIZE,
                    left_just=5, bar_length=20, endwith='\r')
         shuffle(start_links)
         for start_link in start_links:
             yield scrapy.Request(start_link, headers=headers)
+    
+    def update_db(self, part):
+        db.invendb.update_one(
+                        {'root_cat': part['root_cat'],
+                         'cat': part['cat'],
+                         'subcat': part['subcat']},
+                        {'$inc': {'total': 1}},
+                        upsert=True
+                    )
+            
+        always_update = {'unit_price': part['unit_price'],
+                         'min_quan': part['min_quan'],
+                         'date_scraped': part['date_scraped'],
+                         'pdf_link': part['pdf_link'],
+                         'dist_partlink': part['dist_partlink']}
+        db.distdb.update_one(
+                {'part_num': part['part_num'],
+                 'manufac': part['manufac']},
+                {'$setOnInsert': {k: v for k, v in part.items()
+                                       if k not in always_update.keys()},
+                 '$set': always_update},
+                 upsert=True
+            )
+        
+        db.manufacdb.update_one(
+                {'manufac': part['manufac']},
+                {'$setOnInsert': {'manufac': part['manufac'],
+                                  'manufac_ngram3': get_ngrams(
+                                                    part['manufac'])}},
+                 upsert=True
+            ) 
 
+    def clean_part_data_and_store(self, part, cat, subcat):
+        for _ in [('unit_price', float), ('min_quan', int)]:
+            try:
+                part[_[0]] = _[1](part[_[0]])
+            except ValueError:
+                if not part[_[0]] or re.match(r'[0-9]+', part[_[0]]) is not None:
+                   part[_[0]] = 'See distributer'
+                   
+        part['pdf_link'] = self.clean_pdf_url(part['pdf_link'])
+        part['partnum_manufac_ngram3'] = get_ngrams(part['part_num']) \
+                                         + get_ngrams(part['manufac'])
+        part['root_cat'] = self.pt.cat_tree[cat][subcat]['myrootcat']
+        part['cat'] = self.pt.cat_tree[cat][subcat]['mycat']
+        part['subcat'] = self.pt.cat_tree[cat][subcat]['mysubcat']
+        self.update_db(part)
+        
     def parse(self, response):
-        if os.path.isdir('.stop_spider'):
+        if os.path.isdir('.stop_spider') or self.batch_count > cfg.BATCH_SIZE*0.9:
             print(f'\nStop crawling spider {self.name}')
             raise scrapy.exceptions.CloseSpider('Stopped by user')
         
         cat, subcat = self.bread_crumbs(response)
-        
         table_len = len(response.xpath(self.xp.TABLE_LEN))
         
         table_heads = {}
@@ -251,7 +375,6 @@ class MainBaseMixin:
                         docs = self.process_misc_data(f'{table_title} {misc_data}',
                                                       part['part_num'],
                                                       misc_data)
-                        
                         for sub_idx, doc in enumerate(docs):
                             col = '%s.%s' % (title_idx, sub_idx)
                             doc = {**doc, **{'direct': 'v', 'manufac': part['manufac'],
@@ -263,52 +386,8 @@ class MainBaseMixin:
                             db.partdb.update_one({'dist_num': part['dist_num'],
                                                   'col': col},
                                                   {'$setOnInsert': doc}, upsert=True)
-            
-                for _ in [('unit_price', float), ('min_quan', int)]:
-                    try:
-                        part[_[0]] = _[1](part[_[0]])
-                    except ValueError:
-                        if not part[_[0]]:
-                           part[_[0]] = 'See distributer'
                 
-                part['pdf_link'] = self.clean_pdf_link(part['pdf_link'])
-                
-                part['partnum_manufac_ngram3'] = get_ngrams(part['part_num']) \
-                                                 + get_ngrams(part['manufac'])
-                
-                part['root_cat'] = self.pt.cat_tree[cat][subcat]['myrootcat']
-                part['cat'] = self.pt.cat_tree[cat][subcat]['mycat']
-                part['subcat'] = self.pt.cat_tree[cat][subcat]['mysubcat']
-                
-                db.invendb.update_one(
-                        {'root_cat': part['root_cat'],
-                         'cat': part['cat'],
-                         'subcat': part['subcat']},
-                        {'$inc': {'total': 1}},
-                        upsert=True
-                    )
-            
-                always_update = {'unit_price': part['unit_price'],
-                                 'min_quan': part['min_quan'],
-                                 'date_scraped': part['date_scraped'],
-                                 'pdf_link': part['pdf_link'],
-                                 'dist_partlink': part['dist_partlink']}
-                db.distdb.update_one(
-                        {'part_num': part['part_num'],
-                         'manufac': part['manufac']},
-                        {'$setOnInsert': {k: v for k, v in part.items()
-                                               if k not in always_update.keys()},
-                         '$set': always_update},
-                         upsert=True
-                    )
-            
-                db.manufacdb.update_one(
-                        {'manufac': part['manufac']},
-                        {'$setOnInsert': {'manufac': part['manufac'],
-                                          'manufac_ngram3': get_ngrams(
-                                                            part['manufac'])}},
-                         upsert=True
-                    )
+                self.clean_part_data_and_store(part, cat, subcat)
                 
                 processed_pdf = db.metadb.find_one({'part_num': part['part_num'],
                                                     'manufac': part['manufac']})
@@ -338,15 +417,20 @@ class MainBaseMixin:
                            self.total_count, left_just=20, endwith='')
                 print_prog(' '*5+'Progress', self.batch_count, cfg.BATCH_SIZE,
                            left_just=5, bar_length=20, endwith='\r')
-                
-            next_page = response.xpath(self.xp.NEXT_PAGE).extract_first()
+            
+            self.validate_data(part, response.url)
+            modified_url = self.check_current_url(response.url)
+            if modified_url:
+                next_page = modified_url
+                raise AttributeError
+            else:
+                next_page = response.xpath(self.xp.NEXT_PAGE).extract_first()
             if next_page:
-                next_page = urljoin(self.base_url, next_page)
+                next_page = self.clean_next_url(urljoin(self.base_url, next_page))
                 db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},
                                        {'$set': {'current_link': next_page},
                                         '$inc': {'current_count': table_len}})
-                if self.batch_count < cfg.BATCH_SIZE:
-                    yield scrapy.Request(url=next_page, callback=self.parse)
+                yield scrapy.Request(url=next_page, callback=self.parse)
             else:
                 start_link = db.cursordb.find_one(
                         {'ucat': cat+'__'+subcat,
@@ -357,14 +441,12 @@ class MainBaseMixin:
                                                  'scan_complete': True},
                                         '$inc': {'current_count': table_len}})
         except AttributeError:
-            next_page = response.url
+            next_page = self.clean_next_url(urljoin(self.base_url, next_page))
             self.logger.debug(f'---> Got invalid data from {response.url}, trying again with {next_page}')
-            next_page = urljoin(self.base_url, next_page)
             db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},
                                    {'$set': {'current_link': next_page}})
-            if self.batch_count < cfg.BATCH_SIZE:
-                yield scrapy.Request(url=next_page, callback=self.parse,
-                                     dont_filter=True)
+            yield scrapy.Request(url=next_page, callback=self.parse,
+                                 dont_filter=True)
         
     def save_pdf(self, response):
         # Save PDF

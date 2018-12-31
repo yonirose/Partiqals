@@ -43,7 +43,7 @@ mysub_idx = [ , , , , , , , , , , , , , ,]
 for idx, subcat in zip(mysub_idx, subcats):
     cat_tree['Capacitors'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
 
-12/11/2018, 15:29:19
+#12/11/2018, 15:29:19
 
 import os
 import sys
@@ -85,6 +85,53 @@ subcats = [
     'Thin Film Capacitors',
     'Aluminum Electrolytic Capacitors',
     'Accessories',
+]
+mysub_idx = [ , , , , , , , , , , , , , ,]
+for idx, subcat in zip(mysub_idx, subcats):
+    cat_tree['Capacitors'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+
+# 12/21/2018, 16:41:12
+
+import os
+import sys
+from collections import defaultdict
+import mycat_tree as mt
+cat_tree = defaultdict(dict)
+myrootcat = ''
+mycat = ''
+mysubcat = mt.mytree[myrootcat][mycat]
+
+subcats = [
+    'Accessories',
+    'Chip Resistor - Surface Mount',
+    'Chassis Mount Resistors',
+    'Specialized Resistors',
+    'Through Hole Resistors',
+    'Resistor Networks Arrays',
+]
+mysub_idx = [ , , , , , ,]
+for idx, subcat in zip(mysub_idx, subcats):
+    cat_tree['Resistors'][subcat] = {'myrootcat': myrootcat, 'mycat': mycat, 'mysubcat': mysubcat[idx]}
+
+myrootcat = ''
+mycat = ''
+mysubcat = mt.mytree[myrootcat][mycat]
+
+subcats = [
+    'Ceramic Capacitors',
+    'Accessories',
+    'Aluminum - Polymer Capacitors',
+    'Capacitor Networks Arrays',
+    'Tantalum Capacitors',
+    'Thin Film Capacitors',
+    'Mica and PTFE Capacitors',
+    'Electric Double Layer Capacitors EDLC Supercapacitors',
+    'Film Capacitors',
+    'Aluminum Electrolytic Capacitors',
+    'Tantalum - Polymer Capacitors',
+    'Trimmers Variable Capacitors',
+    'Niobium Oxide Capacitors',
+    'Silicon Capacitors',
 ]
 mysub_idx = [ , , , , , , , , , , , , , ,]
 for idx, subcat in zip(mysub_idx, subcats):

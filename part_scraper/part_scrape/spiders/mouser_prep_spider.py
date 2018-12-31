@@ -44,3 +44,7 @@ class MouserCount(PrepBaseMixin, scrapy.Spider):
         bread_crumbs = response.xpath(xp.BREAD_CRUMBS).extract()
         cat_name, subcat_name = bread_crumbs[-2:]
         return replace_illchar(cat_name), replace_illchar(subcat_name)
+    
+    def clean_pdf_url(self, url):
+        return url.replace('//eu', '//www') if url else ''
+        

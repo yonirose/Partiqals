@@ -19,7 +19,7 @@ from utils.error_logging import ErrorHandler
 
 class ArrowSpider(scrapy.Spider):
     name = 'arrow'
-    goto_link = 'https://mouser.com/Phase-Detectors-Shifters/_/N-az8is/'
+    goto_link = 'https://www.mouser.com/Modulator-Demodulator/_/N-az8ik/?No=250'
     custom_settings = {
         'LOG_FILE': os.path.join('..', '..', '..', 'logs',
                                  '%s_scrapy.log' % name)

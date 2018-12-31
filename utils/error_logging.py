@@ -14,7 +14,7 @@ import config as cfg
 class ErrorHandler():
     def __init__(self, base_path=None, log_name='analyze_err.log', reset_log=False):
         if base_path is None:
-            self.base_path = os.path.join('..', '..', '..', 'logs')
+            self.base_path = os.path.join('..', 'logs')
         else:
             self.base_path = base_path
             
@@ -25,7 +25,7 @@ class ErrorHandler():
       
     def register(self, message, mess_type, part_num):
         with open(os.path.join(self.base_path, self.log_name),
-                  'a', encoding='utf-8') as f:
+                  'at', encoding='utf-8') as f:
             time_sig = datetime.now().strftime('%m-%d-%Y %H:%M:%S')
             new_mess = '[%s] %s: %s' % (part_num, mess_type.upper(), message)
             # Suppress repeating errors

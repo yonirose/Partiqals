@@ -27,7 +27,7 @@ class DispatcherHandler():
     def dispatch_loop(self):
         self.dispatch_proc()
         while True:
-            if os.path.isdir(os.path.join(self.base_dir, 'stop')):
+            if os.path.isdir(os.path.join(self.base_dir, '.stop')):
                 print('\nStopping dispatch process...')
                 break
             else:
@@ -38,7 +38,7 @@ if __name__ == '__main__':
         print('Dispatches PDF files for processing\n')
         print('--start = Start dispatch process')
         print('--stop = Stop dispatch process')
-        print('--stat = Status report')
+        print('--stats = Status report')
         print('--help = help menu')
     elif sys.argv[1] == '--start':
         disp = DispatcherHandler(num_proc=cfg.NUM_PROC)
@@ -51,8 +51,8 @@ if __name__ == '__main__':
                     print(folder)
                     shutil.rmtree(os.path.join('.', 'pdf_extract', folder),
                                                ignore_errors=True)
-        os.rename(os.path.join('.', 'pdf_extract', 'stop'),
-                  os.path.join('.', 'pdf_extract', 'start'))
+        os.rename(os.path.join('.', 'pdf_extract', '.stop'),
+                  os.path.join('.', 'pdf_extract', '.start'))
         # Make all in progress PDFs as errored
         for err_pdf in db.metadb.find({'processed': 'inprogress'}):
             db.metadb.update_one({'_id': ObjectId(err_pdf['_id'])},
@@ -61,11 +61,11 @@ if __name__ == '__main__':
         disp.dispatch_loop() 
     elif sys.argv[1] == '--stop':
         try:
-            os.rename(os.path.join('.', 'pdf_extract', 'start'),
-                      os.path.join('.', 'pdf_extract', 'stop'))
+            os.rename(os.path.join('.', 'pdf_extract', '.start'),
+                      os.path.join('.', 'pdf_extract', '.stop'))
         except FileNotFoundError:
             pass
-    elif sys.argv[1] == '--stat':
+    elif sys.argv[1] == '--stats':
         false_pdf = db.metadb.find({'processed': 'pending'})
         true_pdf = db.metadb.find({'processed': 'done'})
         prog_pdf = db.metadb.find({'processed': 'inprogress'})

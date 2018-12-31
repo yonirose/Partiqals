@@ -10,7 +10,7 @@ import os
 import re
 from lxml import etree
 from operator import itemgetter, attrgetter
-from collections import namedtuple, defaultdict, deque
+from collections import namedtuple, defaultdict, deque, abc, UserList
 # import itertools
 # import copy
 import cv2
@@ -27,10 +27,10 @@ import utils.error_logging as er
 import config as cfg
 
 
-class ElemList(list):
+class ElemList(UserList):
     def __init__(self, elem_type):
-        self.Element = elem_type
         super().__init__()
+        self.Element = elem_type
     
     def __setitem__(self, indxs, val):
         try:
@@ -642,8 +642,11 @@ class MongoDocCreator(MongoElem):
         return make_doc()
         
     def make_mongoelem(self, ext_elems_to_analyze=None):
-        if ext_elems_to_analyze:
-           self.gens = [self.ext_elems(ext_elems_to_analyze)] 
+        if ext_elems_to_analyze is not None:
+            if isinstance(ext_elems_to_analyze, abc.MutableSequence):
+                self.gens = [self.ext_elems(ext_elems_to_analyze)]
+            else:
+                self.gens = [self.ext_elems([ext_elems_to_analyze])]
             
         for gen in self.gens:
             while True:

@@ -11,7 +11,7 @@ import scrapy
 from . base_spiders import MainBaseMixin
 from dist.mouser import xpath_select as xp
 from dist.mouser import part_tree as pt
-from utils.misc import replace_illchar
+from . mouser_prep_spider import MouserCount
 
 
 class MouserSpider(MainBaseMixin, scrapy.Spider):
@@ -34,17 +34,21 @@ class MouserSpider(MainBaseMixin, scrapy.Spider):
     def __init__(self):
         super().__init__(start_row_idx=3, xpath_select=xp, part_tree=pt)
     
-    # Must override the following methods
+    # Overriden methods
     def bread_crumbs(self, response):
-        crumbs = response.xpath(self.xp.BREAD_CRUMBS).extract()
-        cat, subcat = crumbs[-2:]
-        return replace_illchar(cat), replace_illchar(subcat)
+        return MouserCount.bread_crumbs(self, response)
     
-    def clean_pdf_link(self, pdf_link):
-        if pdf_link:
-            return pdf_link
-        else:
-            return ''
+    def clean_pdf_url(self, url):
+        return MouserCount.clean_pdf_url(self, url)
+    
+    def clean_next_url(self, url):
+        return self.clean_pdf_url(url)
+    
+    def clean_link(self, link):
+        return MouserCount.clean_link(self, link)
     
     def process_misc_data(self, text, part_num, misc_data):
-        return [list(self.docs.make_mongoelem(ext_elems_to_analyze=[text]))[0]]
+        return self.docs.make_mongoelem(ext_elems_to_analyze=text) # Returns a generator
+
+    def check_current_url(self, url):
+        return self.clean_next_url(url)

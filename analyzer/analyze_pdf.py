@@ -109,30 +109,29 @@ class DataValidation():
 
 
 class Analyzer():
-    def __init__(self, upart, max_pdfpages=cfg.MAX_PDF_PAGES):
+    def __init__(self, part_num, manufac, max_pdfpages=cfg.MAX_PDF_PAGES):
         self.max_pdfpages = max_pdfpages
-        self.upart = upart
-        self._upart = upart.replace(' ', '_') # To avoid space in file names
+        self.part_num = part_num
+        self.manufac = manufac
+        self.upart = f'{self.part_num}__{self.manufac}'.replace(' ', '_') # To avoid space in file names
         self.base_dir = os.path.join('.', 'pdf_extract')
-        self.pdf_dir = os.path.join(self.base_dir, self._upart,
-                                    self.upart.split('__')[0]+'.pdf')
-        self.html_dir = os.path.join(self.base_dir, self._upart,
-                                     self.upart.split('__')[0]+'.html')
+        self.pdf_dir = os.path.join(self.base_dir, self.upart, f'{self.manufac}.pdf')
+        self.html_dir = os.path.join(self.base_dir, self.upart, f'{self.manufac}.html')
         self.err_to = ErrorHandler()
         
     def create_db(self, page_num):
         analyze_pdf_prog()
         success = False
         try:
-            os.mkdir(os.path.join(self.base_dir, self._upart))
+            os.mkdir(os.path.join(self.base_dir, self.upart))
             if cfg.KEEP_GRIDFS_PDF:
-                pdf_out = db.pdfdb.find_one({'filename': self.upart})
+                pdf_out = db.pdfdb.find_one({'filename': self.upart.replace('_', ' ')})
                 pdf_data = pdf_out.read()
             else:
                 response = requests.get(
                         db.distdb.find_one(
-                                {'part_num': self.upart.split('__')[0],
-                                 'manufac': self.upart.split('__')[1]},
+                                {'part_num': self.part_num,
+                                 'manufac': self.manufac},
                                 {'pdf_link': True}
                             )['pdf_link']
                     )
@@ -154,18 +153,17 @@ class Analyzer():
                      self.pdf_dir, self.html_dir
                 )
             #print(cmdline)
-            
             result = Popen(cmdline)
             result.wait()
-            
         except FileNotFoundError:
-            db.metadb.update_one({'upart': self.upart},
-                                   {'$set': {'processed': 'error'}})
+            db.metadb.update_one({'manufac': self.manufac,
+                                  'part_num': self.part_num},
+                                 {'$set': {'processed': 'error'}})
         try:   
             while True:
                 pdf = ah.MongoDocCreator(
                         path=os.path.join(self.html_dir, 'page%s' % page_num),
-                        part_num=self.upart
+                        part_num=self.upart.replace('_', ' ')
                     )
                 for elem in pdf.make_mongoelem():
                     if elem:
@@ -182,8 +180,8 @@ class Analyzer():
                                 or dv.unit_param_word(page_num, allpages_mongoelem)
                             ):
                                 elem = {
-                                    **{'part_num': self.upart.split('__')[0],
-                                       'manufac': self.upart.split('__')[1],
+                                    **{'part_num': self.part_num,
+                                       'manufac': self.manufac,
                                        'page_num': page_num}, **elem
                                 }
                                 elem['word'] += get_ngrams(elem['part_num']) \
@@ -194,20 +192,22 @@ class Analyzer():
             if allpages_mongoelem:
                 db.partdb.insert_many(allpages_mongoelem)
             if page_num == 1:
-                db.metadb.update_one({'upart': self.upart},
-                                       {'$set': {'processed': 'error', 'page': 0}})
+                db.metadb.update_one({'manufac': self.manufac,
+                                      'part_num': self.part_num},
+                                     {'$set': {'processed': 'error', 'page': 0}})
                 # Popen('scrapy runspider --logfile=agent_log.log agent_spider.py'.split())
             else:
-                db.metadb.update_one({'upart': self.upart},
-                                       {'$set': {'processed': 'done'},
-                                        '$inc': {'page': page_num}})
+                db.metadb.update_one({'manufac': self.manufac,
+                                      'part_num': self.part_num},
+                                     {'$set': {'processed': 'done'},
+                                      '$inc': {'page': page_num}})
                 success = True
                 
         # Checking if need to delete PDF datasheets to save space
         if cfg.KEEP_GRIDFS_PDF and not cfg.KEEP_PDF_IN_DB:
             db.pdfdb.delete(pdf_out._id)
         
-        shutil.rmtree(os.path.join(self.base_dir, self._upart),
+        shutil.rmtree(os.path.join(self.base_dir, self.upart),
                       ignore_errors=True)
         
         return success
@@ -222,7 +222,8 @@ class Dispatcher():
         for upart, progress_start in self.inprogress.copy().items():
             if now - progress_start > stale_time:
                 db.metadb.update_one(
-                            {'upart': upart},
+                            {'manufac': upart[0],
+                             'part_num': upart[1]},
                             {'$set': {'processed': 'error'}}
                         )
                 del self.inprogress[upart]
@@ -234,15 +235,16 @@ class Dispatcher():
                         {'$set': {'processed': 'inprogress'}}
                     )
             if isinstance(need_to_process, dict):
-                part = Analyzer(need_to_process['upart'])
-                self.inprogress[part.upart] = time.time()
+                part = Analyzer(need_to_process['part_num'],
+                                need_to_process['manufac'])
+                self.inprogress[(part.part_num, part.manufac)] = time.time()
                 if part.err_to.logger('', 'info', part.upart)(part.create_db)(need_to_process['page']):
                     del self.inprogress[part.upart]
             else:
                 time.sleep(0.1)
             
             self.check_inprogress()
-            if os.path.isdir(os.path.join('.', 'pdf_extract', 'stop')):
+            if os.path.isdir(os.path.join('.', 'pdf_extract', '.stop')):
                 break
             
 if __name__ == '__main__':

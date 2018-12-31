@@ -8,6 +8,7 @@ import sys
 import os
 import shutil
 import time
+from random import shuffle
 from subprocess import Popen
 
 from utils.error_logging import ErrorHandler
@@ -28,13 +29,14 @@ class DispatcherHandler():
                 print('\n', time.strftime('%m/%d/%Y'), time.strftime('%H:%M:%S'),
                       ' Disk space [Gb]', end='')
                 total, used, free = shutil.disk_usage('.')
-                total = int(total/1024/1024/1024)
-                used = int(used/1024/1024/1024)
-                free = int(free/1024/1024/1024)
+                total = round(total/1024/1024/1024, 2)
+                used = round(used/1024/1024/1024, 2)
+                free = round(free/1024/1024/1024, 2)
                 print_prog(' '*5 + 'used', used, total, left_just=5,
                            bar_length=20, endwith='')
                 print_prog(' free', free, total, left_just=5, bar_length=20)
                 print('\n')
+                shuffle(cfg.SPIDER_LIST)
                 procs = [Popen(('scrapy crawl %s' % spider_to_run).split())
                          for spider_to_run in cfg.SPIDER_LIST]
                 results = [proc.wait() for proc in procs]

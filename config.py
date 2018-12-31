@@ -52,14 +52,11 @@ KEEP_GRIDFS_PDF = False
 KEEP_PDF_IN_DB = False
 
 # Dispacther process
-NUM_PROC = 2
+NUM_PROC = 1
 
 # PDF agent spider
 PDF_AGENT_URL = 'https://www.designfast.com/'
-# SINGLE_PDF_XPATH = "/html/body/div[3]/div/div[1]/article[1]/div/div[2]/a/@href"
-# MANY_PDF_XPATH = "/html/body/div[3]/div/div[1]/article[1]/div[1]/div[2]/a/@href"
-# AGENT_PDF_XPATH = "/html/body/div[3]/div/div[1]/article[1]/div[1]/div[2]/a/@href"
-AGENT_PDF_XPATH = '/html/body/div[3]/div/div[1]/article/div[1]/div[2]/a/@href'
+AGENT_PDF_XPATH = ''
 
 # Spiders
 PERC_TO_SCAN = 0.01 # Used in main spider. Values are between 0 to 1

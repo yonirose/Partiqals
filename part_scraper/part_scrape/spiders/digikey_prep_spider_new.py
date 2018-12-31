@@ -16,7 +16,7 @@ from dist.digikey import init_pages as init
 from utils.misc import replace_illchar
 
 
-class DigiekeyCount(PrepBaseMixin, scrapy.Spider):
+class DigikeyCount(PrepBaseMixin, scrapy.Spider):
     name = "digikey_prepnew"
     custom_settings = {
         'LOG_FILE': os.path.join('..', '..', '..', 'logs',
@@ -28,8 +28,7 @@ class DigiekeyCount(PrepBaseMixin, scrapy.Spider):
                 'scrapy.downloadermiddlewares.useragent.UserAgentMiddleware': None,
                 'scrapy_fake_useragent.middleware.RandomUserAgentMiddleware': 400
             }
-    }
-        
+    } 
     open(os.path.join('..', '..', '..', 'logs', f'{name}_scrapy.log'),
                       'w').close()
     
@@ -46,3 +45,10 @@ class DigiekeyCount(PrepBaseMixin, scrapy.Spider):
         subcat = response.xpath(xp.BREAD_CRUMBS2).extract()[-1].strip('> ')
         return replace_illchar(cat), replace_illchar(subcat)
     
+    def clean_pdf_url(self, url):
+        if url:
+            if url[0:7] == '//media':
+                url = f'https:{url}'
+        else:
+            url = ''
+        return url
