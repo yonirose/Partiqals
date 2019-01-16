@@ -35,6 +35,9 @@ class DispatcherHandler():
                 print_prog(' '*5 + 'used', used, total, left_just=5,
                            bar_length=20, endwith='')
                 print_prog(' free', free, total, left_just=5, bar_length=20)
+                print('\nSpider names: ')
+                for spider_name in cfg.SPIDER_LIST:
+                    print(f'{spider_name} ', end='')
                 print('\n')
                 shuffle(cfg.SPIDER_LIST)
                 procs = [Popen(('scrapy crawl %s' % spider_to_run).split())

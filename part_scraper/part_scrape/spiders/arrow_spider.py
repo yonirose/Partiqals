@@ -19,7 +19,7 @@ from utils.error_logging import ErrorHandler
 
 class ArrowSpider(scrapy.Spider):
     name = 'arrow'
-    goto_link = 'https://www.mouser.com/Modulator-Demodulator/_/N-az8ik/?No=250'
+    goto_link = 'https://www.mouser.com/Semiconductors/Wireless-RF-Semiconductors/Wireless-RF-Integrated-Circuits/RFID-Transponders/_/N-az8ic/?No=225'
     custom_settings = {
         'LOG_FILE': os.path.join('..', '..', '..', 'logs',
                                  '%s_scrapy.log' % name)
@@ -46,9 +46,9 @@ class ArrowSpider(scrapy.Spider):
 
       
     def start_requests(self):
-        headers= {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
-                                 AppleWebKit/537.36 (KHTML, like Gecko) \
-                                 hrome/66.0.3359.139 Safari/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
+                                  AppleWebKit/537.36 (KHTML, like Gecko) \
+                                  chrome/66.0.3359.139 Safari/537.36'}
         for start_link in [self.goto_link]:
             yield scrapy.Request(start_link, headers=headers)
 

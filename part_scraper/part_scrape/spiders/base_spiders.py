@@ -25,6 +25,238 @@ import db_setup as db
 import config as cfg
 from utils.error_logging import ErrorHandler
 
+class AutoStorage:
+    
+    def __init__(self, storage_name):
+        self.storage_name = storage_name
+        super().__init__() # Calls ValidationTypes.__init__()
+        
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        else:
+            return instance.__dict__[self.storage_name] + (self.storage_name,)
+        
+    def __set__(self, instance, value):
+        instance.__dict__[self.storage_name] = value
+        
+
+class DataValidation(AutoStorage):
+    
+    def __set__(self, instance, value):
+        value = self.format_and_validate(value)
+        super().__set__(instance, value)
+        
+    def format_and_validate(self, value):
+        raise NotImplementedError
+
+
+class ValidationTypes:
+    
+    def __init__(self):
+        self.valid_funcs = {'empty_string': self.empty_string,
+                            'not_int': self.not_int,
+                            'not_float': self.not_float,
+                            'not_str': self.not_str,
+                            'http_inlink': self.http_inlink}
+        
+    def report_issue(self, problem):
+        return (
+                '~'*80
+                + '\n'
+                + time.strftime('%m/%d/%Y')
+                + ' '
+                + time.strftime('%H:%M:%S')
+                + ' '
+                + 'DIST: %s\n'
+                + '%s\n'
+                + 'PART NUM: %s, ISSUE: '
+                + problem + '\n' 
+            )
+                
+    def waiver(self, valid_type, data):
+        waiver_cases = {'not_float': ['Digi-Reel']}
+        for waiver_case in waiver_cases[valid_type]:
+            if data == waiver_case:
+                return True
+        return False
+        
+    def empty_string(self, data_type, data):
+        if data == '':
+            return self.report_issue(f"{data_type} is empty string ''")
+        return None
+      
+    def not_int(self, data_type, data):
+        if not isinstance(data, int):
+            return self.report_issue(f'{data_type} is not int but <{data}>')
+        return None
+            
+    def not_float(self, data_type, data):
+        if not isinstance(data, float) and not self.waiver('not_float', data):
+            return self.report_issue(f'{data_type} is not float but <{data}>')
+        return None
+            
+    def not_str(self, data_type, data):
+        if not isinstance(data, str):
+            return self.report_issue(f'{data_type} is not str but <{data}>')
+        return None
+            
+    def http_inlink(self, data_type, data):
+        if 'http' not in data and 'https' not in data:
+            return self.report_issue(f"{data_type} has no 'http(s)' in <{data}>")
+        return None
+
+
+class PartNum(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+          
+    def format_and_validate(self, value):
+        try:
+            value = replace_illchar(value.strip())
+        except Exception:
+            value = 'N/A'
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+
+
+class DistNum(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+
+    def format_and_validate(self, value):
+        try:
+            value = value.strip()
+        except Exception:
+            value = 'See distributer'
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+
+    
+class Manufac(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+
+    def format_and_validate(self, value):
+        try:
+            value = replace_illchar(value)
+        except Exception:
+            value = 'See distributer'
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+    
+    
+class Descr(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+
+    def format_and_validate(self, value):
+        try:
+            value = value.strip()
+        except Exception:
+            value = 'N/A'
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+    
+    
+class UnitPrice(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+
+    def format_and_validate(self, value):
+        try:
+            value = float(replace_illchar(value.strip()))
+        except Exception:
+            if self.waiver('not_float', value):
+                pass
+            else:
+                value = 'See distributer'
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+    
+    
+class DistPartLink(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+
+    def format_and_validate(self, value):
+        if not value:
+            value = ''
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+    
+    
+class PdfLink(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+
+    def format_and_validate(self, value):
+        if not value:
+            value = ''
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+    
+    
+class MinQuan(DataValidation, ValidationTypes):
+    
+    def __init__(self, storage_name, *valid_types):
+        super().__init__(storage_name)
+        self.valid_types = valid_types
+
+    def format_and_validate(self, value):
+        try:
+            value = int(value.strip().replace(',', ''))
+        except Exception:
+            value = 'See distributer'
+        
+        for valid_type in self.valid_types:
+            err_msg = self.valid_funcs[valid_type](self.storage_name, value)
+            if err_msg is not None:
+                return (value, err_msg)
+        return (value, None)
+
 
 class PrepBaseMixin:
     
@@ -169,12 +401,33 @@ class PrepBaseMixin:
         self.update_prog()
 
 
+class DescrpWrap:
+    ''' Descriptor definition '''
+    part_num = PartNum('part_num', *['empty_string', 'not_str'])
+    dist_num = DistNum('dist_num', *['empty_string', 'not_str'])
+    manufac = Manufac('manufac', *['empty_string', 'not_str'])
+    descr = Descr('descr', *['empty_string', 'not_str'])
+    unit_price = UnitPrice('unit_price', *['not_float'])
+    dist_partlink = DistPartLink('dist_partlink', *['empty_string'])
+    pdf_link = PdfLink('pdf_link', *['empty_string', 'http_inlink'])
+    min_quan = MinQuan('min_quan', *['not_int'])
+
 class MainBaseMixin:
     
     prog_count = 0
     total_count = 0
-    batch_count = 0  
+    batch_count = 0
     
+    ''' Descriptor definition '''
+    part_num = PartNum('part_num', *['empty_string', 'not_str'])
+    dist_num = DistNum('dist_num', *['empty_string', 'not_str'])
+    manufac = Manufac('manufac', *['empty_string', 'not_str'])
+    descr = Descr('descr', *['empty_string', 'not_str'])
+    unit_price = UnitPrice('unit_price', *['not_float'])
+    dist_partlink = DistPartLink('dist_partlink', *['empty_string'])
+    pdf_link = PdfLink('pdf_link', *['empty_string', 'http_inlink'])
+    min_quan = MinQuan('min_quan', *['not_int'])
+
     def __init__(self, start_row_idx, xpath_select, part_tree):
         super().__init__()
         self.xp = xpath_select
@@ -184,72 +437,6 @@ class MainBaseMixin:
         self.docs = ah.MongoDocCreator()
         self.text_to = lp.Parser()
         self.err_to = ErrorHandler()
-    
-    def validate_data(self, part, url):
-        
-        def report_anam(problem):
-            with open(os.path.join('..', '..', '..', 'logs',
-                                   'data_validation.log'), 'at') as dv_file:
-                msg = (
-                        f"{'~'*80}\n"
-                        f"{time.strftime('%m/%d/%Y')} {time.strftime('%H:%M:%S')} "
-                        f"DIST: {part['dist']}\n"
-                        f"{url}\n"
-                        f"PART NUM: {part['part_num']}, ISSUE: {problem}\n"
-                        
-                )
-                dv_file.write(msg)
-                
-        def waiver(valid_type, data):
-            waiver_cases = {'not_float': ['Digi-Reel']}
-            for waiver_case in waiver_cases[valid_type]:
-                if data == waiver_case:
-                    return True
-            return False
-            
-        def empty_string(data_type, data):
-            if data == '':
-                report_anam(f"{data_type} is empty string ''")
-                return True
-            return False
-          
-        def not_int(data_type, data):
-            if not isinstance(data, int):
-                report_anam(f'{data_type} is not int but <{data}>')
-                return True
-            return False
-                
-        def not_float(data_type, data):
-            if not isinstance(data, float) and not waiver('not_float', data):
-                report_anam(f'{data_type} is not float but <{data}>')
-                return True
-            return False
-                
-        def not_str(data_type, data):
-            if not isinstance(data, str):
-                report_anam(f'{data_type} is not str but <{data}>')
-                return True
-            return False
-                
-        def http_inlink(data_type, data):
-            if 'http' not in data and 'https' not in data:
-                report_anam(f"{data_type} has no 'http(s)' in <{data}>")
-                return True
-            return False
-                
-        validation_types = {'part_num': [empty_string, not_str],
-                            'dist_num': [empty_string, not_str],
-                            'manufac': [empty_string, not_str],
-                            'descr': [empty_string, not_str],
-                            'unit_price': [not_float],
-                            'dist_partlink': [empty_string, http_inlink],
-                            'pdf_link': [empty_string, http_inlink],
-                            'min_quan': [not_int]}
-        
-        for data_type, valid_funcs in validation_types.items():
-            for valid_func in valid_funcs:
-                if valid_func(data_type, part[data_type]):
-                    break
 
     def bread_crumbs(self, response):
         raise NotImplementedError
@@ -339,12 +526,10 @@ class MainBaseMixin:
         self.update_db(part)
         
     def parse(self, response):
+        descrp = DescrpWrap() # Per instance desriptors to avoid overwriting
         if os.path.isdir('.stop_spider') or self.batch_count > cfg.BATCH_SIZE*0.9:
             print(f'\nStop crawling spider {self.name}')
             raise scrapy.exceptions.CloseSpider('Stopped by user')
-        
-        cat, subcat = self.bread_crumbs(response)
-        table_len = len(response.xpath(self.xp.TABLE_LEN))
         
         table_heads = {}
         idx = self.xp.HEAD_START_IDX
@@ -356,19 +541,54 @@ class MainBaseMixin:
             else:
                 break
         try:
+            cat, subcat = self.bread_crumbs(response)
+            table_len = len(response.xpath(self.xp.TABLE_LEN))
             for idx in range(self.start_row_idx, table_len+1):
+                self.part_num = response.xpath(self.xp.PART_NUM % idx).extract_first()
+                self.dist_num = response.xpath(self.xp.DIST_NUM % idx).extract_first()
+                self.manufac = response.xpath(self.xp.MANUFAC % idx).extract_first()
+                self.descr = response.xpath(self.xp.DESCR % idx).extract_first()
+                self.unit_price = response.xpath(self.xp.UNIT_PRICE % idx).extract_first()
+                self.dist_partlink = response.xpath(self.xp.DIST_LINK % idx).extract_first()
+                self.pdf_link = response.xpath(self.xp.PDF_LINK % idx).extract_first()
+                self.min_quan = response.xpath(self.xp.MIN_QUAN % idx).extract_first()
+                
+                base_params = [self.part_num, self.dist_num, self.manufac,
+                               self.descr, self.unit_price, self.dist_partlink,
+                               self.pdf_link, self.min_quan]
+                
+                part = dict()
+                for value, err_msg, storage_name in base_params:
+                    if err_msg is not None:
+                       with open(os.path.join('..', '..', '..', 'logs',
+                                 'data_validation.log'), 'at') as dv_file:
+                           try:
+                               err_msg = err_msg % (self.name, response.url, base_params[0][0])
+                               dv_file.write(err_msg)
+                           except TypeError:
+                               self.logger.info('~~> '+err_msg % (self.name, response.url, base_params[0][0]))
+                               
+                    part[storage_name] = value
+                part = {**part, **{'dist': self.name,
+                                   'date_scraped': datetime.datetime.utcnow()}}
+                part['dist_partlink'] = urljoin(self.base_url,
+                                                part['dist_partlink'])
+                
+                '''
                 part = {
-                        'part_num': replace_illchar(response.xpath(self.xp.PART_NUM % idx).extract_first().strip()),
-                        'dist_num': response.xpath(self.xp.DIST_NUM % idx).extract_first().strip(),
-                        'manufac': replace_illchar(response.xpath(self.xp.MANUFAC % idx).extract_first()),
-                        'descr': response.xpath(self.xp.DESCR % idx).extract_first().strip(),
-                        'unit_price': replace_illchar(response.xpath(self.xp.UNIT_PRICE % idx).extract_first().strip()),
+                        'part_num': self.part_num,
+                        'dist_num': self.dist_num,
+                        'manufac': self.manufac,
+                        'descr': self.descr,
+                        'unit_price': self.unit_price,
                         'dist': self.name,
-                        'dist_partlink': urljoin(self.base_url, response.xpath(self.xp.DIST_LINK % idx).extract_first()),
-                        'pdf_link': response.xpath(self.xp.PDF_LINK % idx).extract_first(),
-                        'min_quan': response.xpath(self.xp.MIN_QUAN % idx).extract_first().strip().replace(',', ''),
+                        'dist_partlink': self.dist_partlink,
+                        'pdf_link': self.pdf_link,
+                        'min_quan': self.min_quan,
                         'date_scraped': datetime.datetime.utcnow()
                     }
+                '''
+                
                 for title_idx, table_title in table_heads.items():
                     misc_data = response.xpath(self.xp.MISC_DATA % (idx, title_idx)).extract_first().strip()
                     if misc_data:
@@ -396,7 +616,7 @@ class MainBaseMixin:
                     db.metadb.update_one({'part_num': part['part_num'],
                                           'manufac': part['manufac']},
                                          {'$set': {'processed': 'pending', 'page': 0,
-                                                  'pdf_link': part['pdf_link']}},
+                                                   'pdf_link': part['pdf_link']}},
                                          upsert=True)
     
                     if cfg.KEEP_GRIDFS_PDF:
@@ -418,7 +638,6 @@ class MainBaseMixin:
                 print_prog(' '*5+'Progress', self.batch_count, cfg.BATCH_SIZE,
                            left_just=5, bar_length=20, endwith='\r')
             
-            self.validate_data(part, response.url)
             modified_url = self.check_current_url(response.url)
             if modified_url:
                 next_page = modified_url
@@ -440,7 +659,7 @@ class MainBaseMixin:
                                        {'$set': {'current_link': start_link,
                                                  'scan_complete': True},
                                         '$inc': {'current_count': table_len}})
-        except AttributeError:
+        except (AttributeError, ValueError):
             next_page = self.clean_next_url(urljoin(self.base_url, next_page))
             self.logger.debug(f'---> Got invalid data from {response.url}, trying again with {next_page}')
             db.cursordb.update_one({'ucat': cat+'__'+subcat, 'dist': self.name},

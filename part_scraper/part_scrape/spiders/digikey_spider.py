@@ -39,7 +39,7 @@ class DigikeySpider(MainBaseMixin, scrapy.Spider):
         return DigikeyCount.bread_crumbs(self, response)
     
     def clean_pdf_url(self, url):
-        return DigikeyCount.clean_pdf_link(self, url)
+        return DigikeyCount.clean_pdf_url(self, url)
     
     def clean_next_url(self, url):
         return url
